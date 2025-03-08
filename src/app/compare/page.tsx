@@ -2,53 +2,32 @@
 
 import { useState, useEffect } from "react";
 
-export default function HomePage() {
+import ShopifyHeader from "../../../components/ShopifyFooter";
+import ShopifyFooter from "../../../components/ShopifyHeader";
+
+export default function ComparePage() {
   const [vendors, setVendors] = useState<string[]>([]);
   const [selectedVendor1, setSelectedVendor1] = useState<string | null>(null);
   const [selectedVendor2, setSelectedVendor2] = useState<string | null>(null);
   const [products1, setProducts1] = useState<any[]>([]);
   const [products2, setProducts2] = useState<any[]>([]);
 
-  // ✅ Fetch vendors from API and log response
   useEffect(() => {
     async function fetchVendors() {
-      try {
-        const res = await fetch("/api/vendors");
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        const data = await res.json();
-        console.log("🔥 Vendors API Response:", data); // ✅ Debugging log
-        setVendors(data);
-      } catch (error) {
-        console.error("❌ Error fetching vendors:", error);
-      }
+      const res = await fetch("/api/vendors");
+      const data = await res.json();
+      setVendors(data);
     }
     fetchVendors();
   }, []);
 
-  // ✅ Fetch products based on selected vendor
   async function fetchProducts(
     vendor: string,
     setProducts: (data: any[]) => void
   ) {
-    try {
-      const res = await fetch(`/api/products?vendor=${vendor}`);
-      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-      const data = await res.json();
-      console.log(`🔥 Products for ${vendor}:`, data); // ✅ Debugging log
-      setProducts(data);
-    } catch (error) {
-      console.error(`❌ Error fetching products for ${vendor}:`, error);
-    }
-  }
-
-  {
-    /* Debugging Vendors */
-  }
-  {
-    console.log("🔥 Vendors State:", vendors);
-  }
-  {
-    /* ✅ Debugging */
+    const res = await fetch(`/api/products?vendor=${vendor}`);
+    const data = await res.json();
+    setProducts(data);
   }
 
   return (
@@ -68,15 +47,11 @@ export default function HomePage() {
             }}
           >
             <option value="">-- Select --</option>
-            {vendors.length === 0 ? (
-              <option disabled>Loading vendors...</option>
-            ) : (
-              vendors.map((vendor) => (
-                <option key={vendor} value={vendor}>
-                  {vendor}
-                </option>
-              ))
-            )}
+            {vendors.map((vendor) => (
+              <option key={vendor} value={vendor}>
+                {vendor}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -92,15 +67,11 @@ export default function HomePage() {
             }}
           >
             <option value="">-- Select --</option>
-            {vendors.length === 0 ? (
-              <option disabled>Loading vendors...</option>
-            ) : (
-              vendors.map((vendor) => (
-                <option key={vendor} value={vendor}>
-                  {vendor}
-                </option>
-              ))
-            )}
+            {vendors.map((vendor) => (
+              <option key={vendor} value={vendor}>
+                {vendor}
+              </option>
+            ))}
           </select>
         </div>
       </div>

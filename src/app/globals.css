@@ -24,3 +24,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+#shopify-header img,
+#shopify-footer img {
+  max-width: 100%; /* Prevents Shopify images from breaking */
+}
+
+#shopify-header nav {
+  z-index: 9999 !important; /* Ensures Shopify menu doesn't block content */
+}
+
+#shopify-footer {
+  margin-top: 40px; /* Prevents Shopify footer from overlapping the page */
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  background: white; /* Ensures main content is visible */
+  padding: 20px;
+}

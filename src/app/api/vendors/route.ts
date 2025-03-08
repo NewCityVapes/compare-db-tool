@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    let allVendors = [];
+    const allVendors = [];
+
     let hasNextPage = true;
     let offset = 0;
 

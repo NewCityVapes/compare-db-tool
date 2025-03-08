@@ -6,7 +6,15 @@ export default function HomePage() {
   const [vendors, setVendors] = useState<string[]>([]);
   const [selectedVendor1, setSelectedVendor1] = useState<string | null>(null);
   const [selectedVendor2, setSelectedVendor2] = useState<string | null>(null);
-  const [products1, setProducts1] = useState<any[]>([]);
+  type Product = {
+    id: string;
+    title: string;
+    price: string;
+    puffCount?: number;
+  };
+
+  const [products1, setProducts1] = useState<Product[]>([]);
+
   const [products2, setProducts2] = useState<any[]>([]);
 
   // ✅ Fetch vendors from API and log response

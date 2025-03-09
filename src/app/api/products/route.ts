@@ -1,9 +1,9 @@
 import { supabase } from "../../../../lib/supabase.mjs";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function GET(req: { url: string | URL }) {
+export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
+    const url = new URL(req.url); // ✅ Ensure we correctly parse the URL
     const vendor = url.searchParams.get("vendor");
 
     if (!vendor) {
@@ -15,7 +15,7 @@ export async function GET(req: { url: string | URL }) {
 
     const { data, error } = await supabase
       .from("products")
-      .select("*") // ✅ Fetch ALL columns (check if fields are missing)
+      .select("*") // ✅ Fetch all columns
       .eq("vendor", vendor) // ✅ Filter by vendor
       .limit(1000) // ✅ Ensure all products are fetched
       .order("title", { ascending: true });

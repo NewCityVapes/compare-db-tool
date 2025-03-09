@@ -15,7 +15,7 @@ export default function HomePage() {
 
   const [products1, setProducts1] = useState<Product[]>([]);
 
-  const [products2, setProducts2] = useState<any[]>([]);
+  const [products2, setProducts2] = useState<Product[]>([]);
 
   // ✅ Fetch vendors from API and log response
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function HomePage() {
   // ✅ Fetch products based on selected vendor
   async function fetchProducts(
     vendor: string,
-    setProducts: (data: any[]) => void
+    setProducts: (data: Product[]) => void
   ) {
     try {
       const res = await fetch(`/api/products?vendor=${vendor}`);

@@ -1,6 +1,6 @@
 "use client";
 import { useCallback } from "react";
-
+import ComparisonTable from "../../components/ComparisonTable";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useParams } from "next/navigation";
@@ -148,66 +148,16 @@ export default function ComparePage() {
         <h2 className="text-2xl font-semibold">Product Comparison</h2>
         <div className="grid grid-cols-2 gap-4 mt-4">
           {/* Vendor 1 Products */}
-          <div>
-            {selectedVendor1 && (
-              <h3 className="text-xl font-medium mb-2">{selectedVendor1}</h3>
-            )}
-            {products1.length === 0 ? (
-              <p>No products found.</p>
-            ) : (
-              <table className="w-full border-collapse border">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="border p-2">Name</th>
-                    <th className="border p-2">Price</th>
-                    <th className="border p-2">Puffs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products1.map((product) => (
-                    <tr key={product.id}>
-                      <td className="border p-2">{product.title}</td>
-                      <td className="border p-2">${product.price}</td>
-                      <td className="border p-2">
-                        {product.puffCount || "N/A"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <ComparisonTable
+            selectedVendor={selectedVendor1}
+            products={products1}
+          />
 
           {/* Vendor 2 Products */}
-          <div>
-            {selectedVendor2 && (
-              <h3 className="text-xl font-medium mb-2">{selectedVendor2}</h3>
-            )}
-            {products2.length === 0 ? (
-              <p>No products found.</p>
-            ) : (
-              <table className="w-full border-collapse border">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="border p-2">Name</th>
-                    <th className="border p-2">Price</th>
-                    <th className="border p-2">Puffs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products2.map((product) => (
-                    <tr key={product.id}>
-                      <td className="border p-2">{product.title}</td>
-                      <td className="border p-2">${product.price}</td>
-                      <td className="border p-2">
-                        {product.puffCount || "N/A"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <ComparisonTable
+            selectedVendor={selectedVendor2}
+            products={products2}
+          />
         </div>
       </div>
     </div>

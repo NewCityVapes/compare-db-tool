@@ -1,33 +1,46 @@
 "use client";
+import { useCallback } from "react";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 
-export default function HomePage() {
+export default function ComparePage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams(); // ✅ Unwrap params properly
+
+  // ✅ Extract vendor names from URL safely
+  const slug = params?.slug as string;
+  const [rawVendor1, rawVendor2] = slug?.split("-vs-") || [
+    "1hundred",
+    "1hundred",
+  ];
+
+  const vendor1 = decodeURIComponent(rawVendor1);
+  const vendor2 = decodeURIComponent(rawVendor2);
+
   const [vendors, setVendors] = useState<string[]>([]);
-  const [selectedVendor1, setSelectedVendor1] = useState<string>("1hundred");
-  const [selectedVendor2, setSelectedVendor2] = useState<string>("1hundred");
+  const [selectedVendor1, setSelectedVendor1] = useState<string>(vendor1);
+  const [selectedVendor2, setSelectedVendor2] = useState<string>(vendor2);
 
   type Product = {
     id: string;
     title: string;
     price: string;
     puffCount?: number;
-    imageUrl?: string;
   };
 
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
 
-  // ✅ Fetch vendors from API on load
+  // ✅ Fetch vendors from API
   useEffect(() => {
     async function fetchVendors() {
       try {
         const res = await fetch("/api/vendors");
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
-        console.log("🔥 Vendors API Response:", data);
         setVendors(data);
       } catch (error) {
         console.error("❌ Error fetching vendors:", error);
@@ -37,10 +50,12 @@ export default function HomePage() {
   }, []);
 
   // ✅ Fetch products based on selected vendor
+
   const fetchProducts = useCallback(
     async (vendor: string, setProducts: (data: Product[]) => void) => {
       try {
         const formattedVendor = encodeURIComponent(vendor.replace(/-/g, " "));
+
         console.log(
           `🔍 Fetching products for vendor: "${vendor}" -> API request: /api/products?vendor=${formattedVendor}`
         );
@@ -59,21 +74,29 @@ export default function HomePage() {
       }
     },
     []
-  );
+  ); // ✅ Empty dependency array ensures function is memoized
 
   // ✅ Load products when vendors change
   useEffect(() => {
-    if (selectedVendor1) fetchProducts(selectedVendor1, setProducts1);
-    if (selectedVendor2) fetchProducts(selectedVendor2, setProducts2);
-  }, [selectedVendor1, selectedVendor2, fetchProducts]);
+    if (selectedVendor1 && selectedVendor2) {
+      console.log(
+        `🔄 Fetching products for ${selectedVendor1} & ${selectedVendor2}`
+      );
+      fetchProducts(selectedVendor1, setProducts1);
+      fetchProducts(selectedVendor2, setProducts2);
+    }
+  }, [selectedVendor1, selectedVendor2, fetchProducts]); // ✅ Include fetchProducts
 
-  // ✅ Update URL dynamically when vendor is selected
+  // ✅ Update URL when user selects a new vendor
   function updateURL(vendor1: string, vendor2: string) {
-    const newSlug = `${vendor1.replace(/\s+/g, "-")}-vs-${vendor2.replace(
-      /\s+/g,
-      "-"
-    )}`;
-    router.push(`/compare/${newSlug}`);
+    const formattedVendor1 = encodeURIComponent(vendor1.trim());
+    const formattedVendor2 = encodeURIComponent(vendor2.trim());
+
+    const newSlug = `${formattedVendor1}-vs-${formattedVendor2}`;
+
+    if (pathname !== `/compare/${newSlug}`) {
+      router.push(`/compare/${newSlug}`);
+    }
   }
 
   return (

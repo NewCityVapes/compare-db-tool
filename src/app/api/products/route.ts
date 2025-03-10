@@ -3,8 +3,8 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url); // ✅ Ensure we correctly parse the URL
-    const vendor = url.searchParams.get("vendor");
+    const url = new URL(req.url);
+    const vendor = url.searchParams.get("vendor"); // Change let -> const ✅
 
     if (!vendor) {
       return NextResponse.json(
@@ -13,16 +13,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const formattedVendor = vendor.replace(/-/g, " "); // Ensure correct format
+    console.log(`🔍 Fetching products for vendor: "${formattedVendor}"`);
+
     const { data, error } = await supabase
       .from("products")
-      .select("*") // ✅ Fetch all columns
-      .eq("vendor", vendor) // ✅ Filter by vendor
-      .limit(1000) // ✅ Ensure all products are fetched
+      .select("*")
+      .ilike("vendor", formattedVendor) // ✅ Ensure case-insensitive match
+      .limit(1000)
       .order("title", { ascending: true });
 
     if (error) throw error;
-
-    console.log(`🔥 Products for ${vendor}:`, data); // ✅ Debugging log
 
     return NextResponse.json(data);
   } catch (error) {

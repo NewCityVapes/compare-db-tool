@@ -78,7 +78,7 @@ export default function ComparePage() {
       <h1 className="page-title">Disposable Comparison Tool</h1>
       <h2 className="page-subtitle">Which Vape is Better?</h2>
 
-      {/* Dropdowns + Product Display */}
+      {/* ✅ Dropdowns + Product Display */}
       <div className="dropdown-container">
         {[
           { vendor: selectedVendor1, products: products1 },
@@ -102,7 +102,7 @@ export default function ComparePage() {
               ))}
             </select>
 
-            {/* Product Image Placeholder */}
+            {/* ✅ Product Image Placeholder */}
             <div className="product-image-container">
               {item.products.length > 0 ? (
                 <Image
@@ -117,7 +117,7 @@ export default function ComparePage() {
               )}
             </div>
 
-            {/* Price & Buy Link */}
+            {/* ✅ Price & Buy Link */}
             {item.products.length > 0 && (
               <a
                 href={item.products[0].link || "#"}
@@ -130,13 +130,13 @@ export default function ComparePage() {
           </div>
         ))}
 
-        {/* Centered VS */}
+        {/* ✅ Properly Centered VS */}
         <div className="vs-container">
           <span className="vs-text">VS</span>
         </div>
       </div>
 
-      {/* Comparison Table */}
+      {/* ✅ Comparison Table */}
       <h2 className="comparison-header">
         {selectedVendor1} vs {selectedVendor2}
       </h2>
@@ -150,13 +150,13 @@ export default function ComparePage() {
         ].map(({ label, key }) => (
           <div key={key} className="attribute-row">
             <div className="attribute-header">{label}</div>
-            <div className="attribute-values">
-              <span>
+            <div className="attribute-values flex flex-col md:flex-row">
+              <span className="text-center md:text-left">
                 {products1.length > 0
                   ? products1[0][key as keyof Product] || "N/A"
                   : "N/A"}
               </span>
-              <span>
+              <span className="text-center md:text-right">
                 {products2.length > 0
                   ? products2[0][key as keyof Product] || "N/A"
                   : "N/A"}

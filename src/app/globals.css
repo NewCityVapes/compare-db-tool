@@ -179,3 +179,67 @@ body {
   flex: 1;
   text-align: center;
 }
+
+/* MOBILE CSS */
+/* MOBILE CSS */
+/* MOBILE CSS */
+
+@media screen and (max-width: 768px) {
+  /* Ensure images are fully visible */
+  .product-image-container {
+    width: 100%; /* Full width on mobile */
+    height: auto;
+    max-width: 250px; /* Limit size */
+    margin: 0 auto;
+  }
+
+  .product-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  /* Center the VS text */
+  .vs-container {
+    display:none;
+  }
+
+  .dropdown-container {
+    display: flex;
+    flex-direction: column; /* ✅ Stack dropdowns vertically */
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 100%;
+    gap: 10px; /* ✅ Reduce gap */
+    overflow-x: hidden; /* ✅ Prevent horizontal scrolling */
+    box-sizing: border-box;
+  }
+
+  .dropdown {
+    width: 90%; /* ✅ Ensures dropdowns fit within mobile screens */
+    max-width: 300px; /* ✅ Prevents excessive stretching */
+    text-align: center;
+  }
+
+  /* Adjust chart for mobile */
+  .attribute-values {
+    flex-direction: row; /* Stack values vertically */
+    box-sizing: content-box; /* ✅ Ensures proper box sizing for mobile */
+    align-items: center;
+    gap: 5px;
+  }
+
+  .attribute-values span {
+    text-align: center;
+    width: 100%;
+  }
+
+  .comparison-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 5%;
+    box-sizing: border-box;
+  }
+}
+

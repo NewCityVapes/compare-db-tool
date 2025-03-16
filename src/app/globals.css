@@ -44,3 +44,80 @@ main {
   background: white; /* Ensures main content is visible */
   padding: 20px;
 }
+
+
+.comparison-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: "Arial", sans-serif;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #2E323B;
+  margin-bottom: 10px;
+}
+
+.page-subtitle {
+  font-size: 24px;
+  color: #cb9d64;
+  margin-bottom: 20px;
+}
+
+.dropdown-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 50px;
+  margin-bottom: 30px;
+}
+
+.dropdown-wrapper {
+  text-align: center;
+}
+
+.dropdown {
+  border: 1px solid #e5e5e5;
+  font-size: 20px;
+  padding: 10px;
+  background-color: white;
+  width: 250px;
+}
+
+.product-image {
+  width: 200px;
+  height: auto;
+  margin-top: 10px;
+}
+
+.buy-link {
+  display: block;
+  color: #cb9d64;
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 5px;
+  text-decoration: none;
+}
+
+.vs-text {
+  font-size: 30px;
+  font-weight: bold;
+  color: #2E323B;
+}
+
+.attribute-header {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+}
+
+.attribute-values {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  font-size: 18px;
+}

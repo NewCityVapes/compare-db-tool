@@ -1,40 +1,34 @@
 "use client";
-import { useCallback } from "react";
-import ComparisonTable from "../../components/ComparisonTable";
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useCallback, useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Image from "next/image"; // ✅ Use Next.js Image
 
 export default function ComparePage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams(); // ✅ Unwrap params properly
+  const params = useParams();
 
-  // ✅ Extract vendor names from URL safely
+  // ✅ Extract vendors from URL
   const slug = params?.slug as string;
-  const [rawVendor1, rawVendor2] = slug?.split("-vs-") || [
-    "1hundred",
-    "1hundred",
-  ];
-
-  const vendor1 = decodeURIComponent(rawVendor1);
-  const vendor2 = decodeURIComponent(rawVendor2);
+  const [rawVendor1, rawVendor2] = slug?.split("-vs-") || [];
+  const selectedVendor1 = decodeURIComponent(rawVendor1);
+  const selectedVendor2 = decodeURIComponent(rawVendor2);
 
   const [vendors, setVendors] = useState<string[]>([]);
-  const [selectedVendor1, setSelectedVendor1] = useState<string>(vendor1);
-  const [selectedVendor2, setSelectedVendor2] = useState<string>(vendor2);
+  const [products1, setProducts1] = useState<Product[]>([]);
+  const [products2, setProducts2] = useState<Product[]>([]);
 
   type Product = {
     id: string;
     title: string;
-    price: string;
+    price: number;
     puffCount?: number;
+    ml?: number;
+    battery?: number;
+    imageUrl?: string;
+    link?: string;
   };
 
-  const [products1, setProducts1] = useState<Product[]>([]);
-  const [products2, setProducts2] = useState<Product[]>([]);
-
-  // ✅ Fetch vendors from API
+  // ✅ Fetch vendors
   useEffect(() => {
     async function fetchVendors() {
       try {
@@ -49,71 +43,50 @@ export default function ComparePage() {
     fetchVendors();
   }, []);
 
-  // ✅ Fetch products based on selected vendor
-
   const fetchProducts = useCallback(
     async (vendor: string, setProducts: (data: Product[]) => void) => {
       try {
         const formattedVendor = encodeURIComponent(vendor.replace(/-/g, " "));
-
-        console.log(
-          `🔍 Fetching products for vendor: "${vendor}" -> API request: /api/products?vendor=${formattedVendor}`
-        );
-
         const res = await fetch(`/api/products?vendor=${formattedVendor}`);
-
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
-        console.log(`🔥 Products for ${vendor}:`, data);
         setProducts(data);
       } catch (error) {
         console.error(`❌ Error fetching products for ${vendor}:`, error);
       }
     },
     []
-  ); // ✅ Empty dependency array ensures function is memoized
+  );
 
-  // ✅ Load products when vendors change
+  // ✅ Fetch products when URL changes
   useEffect(() => {
     if (selectedVendor1 && selectedVendor2) {
-      console.log(
-        `🔄 Fetching products for ${selectedVendor1} & ${selectedVendor2}`
-      );
       fetchProducts(selectedVendor1, setProducts1);
       fetchProducts(selectedVendor2, setProducts2);
     }
-  }, [selectedVendor1, selectedVendor2, fetchProducts]); // ✅ Include fetchProducts
+  }, [selectedVendor1, selectedVendor2, fetchProducts]);
 
-  // ✅ Update URL when user selects a new vendor
-  function updateURL(vendor1: string, vendor2: string) {
-    const formattedVendor1 = encodeURIComponent(vendor1.trim());
-    const formattedVendor2 = encodeURIComponent(vendor2.trim());
-
-    const newSlug = `${formattedVendor1}-vs-${formattedVendor2}`;
-
-    if (pathname !== `/compare/${newSlug}`) {
-      router.push(`/compare/${newSlug}`);
-    }
+  function updateVendorSelection(vendor1: string, vendor2: string) {
+    const newSlug = `${encodeURIComponent(
+      vendor1.trim()
+    )}-vs-${encodeURIComponent(vendor2.trim())}`;
+    router.push(`/compare/${newSlug}`);
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Compare Disposable Products</h1>
+    <div className="comparison-container">
+      <h1 className="page-title">Disposable Comparison Tool</h1>
+      <h2 className="page-subtitle">Which Vape is Better?</h2>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* Vendor 1 Dropdown */}
-        <div>
-          <label className="block mb-2 text-lg">Select Vendor 1:</label>
+      {/* Dropdowns + Product Display */}
+      <div className="dropdown-container">
+        <div className="product-column">
           <select
-            className="border p-2 w-full"
+            className="dropdown"
             value={selectedVendor1}
-            onChange={(e) => {
-              setSelectedVendor1(e.target.value);
-              updateURL(e.target.value, selectedVendor2);
-            }}
+            onChange={(e) =>
+              updateVendorSelection(e.target.value, selectedVendor2)
+            }
           >
             {vendors.map((vendor) => (
               <option key={vendor} value={vendor}>
@@ -121,18 +94,40 @@ export default function ComparePage() {
               </option>
             ))}
           </select>
+
+          {/* Product Image, Price, and Buy Link */}
+          {products1.length > 0 && (
+            <div className="product-info">
+              <Image
+                src={products1[0].imageUrl || ""}
+                alt={products1[0].title}
+                width={250} // ✅ Adjust image size
+                height={250}
+                className="product-image"
+              />
+              <a
+                href={products1[0].link || "#"}
+                target="_blank"
+                className="buy-link"
+              >
+                BUY • ${products1[0].price.toFixed(2)}
+              </a>
+            </div>
+          )}
         </div>
 
-        {/* Vendor 2 Dropdown */}
-        <div>
-          <label className="block mb-2 text-lg">Select Vendor 2:</label>
+        {/* Centered VS */}
+        <div className="vs-container">
+          <span className="vs-text">VS</span>
+        </div>
+
+        <div className="product-column">
           <select
-            className="border p-2 w-full"
+            className="dropdown"
             value={selectedVendor2}
-            onChange={(e) => {
-              setSelectedVendor2(e.target.value);
-              updateURL(selectedVendor1, e.target.value);
-            }}
+            onChange={(e) =>
+              updateVendorSelection(selectedVendor1, e.target.value)
+            }
           >
             {vendors.map((vendor) => (
               <option key={vendor} value={vendor}>
@@ -140,25 +135,57 @@ export default function ComparePage() {
               </option>
             ))}
           </select>
+
+          {/* Product Image, Price, and Buy Link */}
+          {products2.length > 0 && (
+            <div className="product-info">
+              <Image
+                src={products2[0].imageUrl || ""}
+                alt={products2[0].title}
+                width={250} // ✅ Adjust image size
+                height={250}
+                className="product-image"
+              />
+              <a
+                href={products2[0].link || "#"}
+                target="_blank"
+                className="buy-link"
+              >
+                BUY • ${products2[0].price.toFixed(2)}
+              </a>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Comparison Table */}
-      <div className="mt-6">
-        <h2 className="text-2xl font-semibold">Product Comparison</h2>
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          {/* Vendor 1 Products */}
-          <ComparisonTable
-            selectedVendor={selectedVendor1}
-            products={products1}
-          />
+      <h2 className="comparison-header">
+        {selectedVendor1} vs {selectedVendor2}
+      </h2>
 
-          {/* Vendor 2 Products */}
-          <ComparisonTable
-            selectedVendor={selectedVendor2}
-            products={products2}
-          />
-        </div>
+      <div className="comparison-table">
+        {[
+          { label: "PUFF COUNT", key: "puffCount" },
+          { label: "ML", key: "ml" },
+          { label: "BATTERY", key: "battery" },
+          { label: "PRICE", key: "price" },
+        ].map(({ label, key }) => (
+          <div key={key} className="attribute-row">
+            <div className="attribute-header">{label}</div>
+            <div className="attribute-values">
+              <span>
+                {products1.length > 0
+                  ? products1[0][key as keyof Product] || "N/A"
+                  : "N/A"}
+              </span>
+              <span>
+                {products2.length > 0
+                  ? products2[0][key as keyof Product] || "N/A"
+                  : "N/A"}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

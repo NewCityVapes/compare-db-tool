@@ -8,11 +8,12 @@ export async function GET() {
     let hasNextPage = true;
     let offset = 0;
 
-    // ✅ Paginate to fetch all vendors (Supabase limits API results)
+    // ✅ Paginate to fetch all vendors for product type "DISPOSABLES"
     while (hasNextPage) {
       const { data, error } = await supabase
         .from("products")
         .select("vendor")
+        .eq("productType", "DISPOSABLES") // ✅ Filter by product type "DISPOSABLES"
         .neq("vendor", null)
         .neq("vendor", "")
         .order("vendor", { ascending: true })
@@ -28,7 +29,7 @@ export async function GET() {
       }
     }
 
-    console.log("🔥 Final Vendor Count:", allVendors.length);
+    console.log("🔥 Final Vendor Count (DISPOSABLES only):", allVendors.length);
     const uniqueVendors = [
       ...new Set(allVendors.map((item) => item.vendor?.trim())),
     ];

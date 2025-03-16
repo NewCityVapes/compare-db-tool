@@ -80,81 +80,59 @@ export default function ComparePage() {
 
       {/* Dropdowns + Product Display */}
       <div className="dropdown-container">
-        <div className="product-column">
-          <select
-            className="dropdown"
-            value={selectedVendor1}
-            onChange={(e) =>
-              updateVendorSelection(e.target.value, selectedVendor2)
-            }
-          >
-            {vendors.map((vendor) => (
-              <option key={vendor} value={vendor}>
-                {vendor}
-              </option>
-            ))}
-          </select>
+        {[
+          { vendor: selectedVendor1, products: products1 },
+          { vendor: selectedVendor2, products: products2 },
+        ].map((item, index) => (
+          <div key={index} className="product-column">
+            <select
+              className="dropdown"
+              value={item.vendor}
+              onChange={(e) =>
+                updateVendorSelection(
+                  index === 0 ? e.target.value : selectedVendor1,
+                  index === 1 ? e.target.value : selectedVendor2
+                )
+              }
+            >
+              {vendors.map((vendor) => (
+                <option key={vendor} value={vendor}>
+                  {vendor}
+                </option>
+              ))}
+            </select>
 
-          {/* Product Image, Price, and Buy Link */}
-          {products1.length > 0 && (
-            <div className="product-info">
-              <Image
-                src={products1[0].imageUrl || ""}
-                alt={products1[0].title}
-                width={250} // ✅ Adjust image size
-                height={250}
-                className="product-image"
-              />
+            {/* Product Image Placeholder */}
+            <div className="product-image-container">
+              {item.products.length > 0 ? (
+                <Image
+                  src={item.products[0].imageUrl || ""}
+                  alt={item.products[0].title}
+                  width={350}
+                  height={350}
+                  className="product-image"
+                />
+              ) : (
+                <div className="image-placeholder">Loading...</div>
+              )}
+            </div>
+
+            {/* Price & Buy Link */}
+            {item.products.length > 0 && (
               <a
-                href={products1[0].link || "#"}
+                href={item.products[0].link || "#"}
                 target="_blank"
                 className="buy-link"
               >
-                BUY • ${products1[0].price.toFixed(2)}
+                BUY • ${item.products[0].price.toFixed(2)}
               </a>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        ))}
 
         {/* Centered VS */}
         <div className="vs-container">
           <span className="vs-text">VS</span>
-        </div>
-
-        <div className="product-column">
-          <select
-            className="dropdown"
-            value={selectedVendor2}
-            onChange={(e) =>
-              updateVendorSelection(selectedVendor1, e.target.value)
-            }
-          >
-            {vendors.map((vendor) => (
-              <option key={vendor} value={vendor}>
-                {vendor}
-              </option>
-            ))}
-          </select>
-
-          {/* Product Image, Price, and Buy Link */}
-          {products2.length > 0 && (
-            <div className="product-info">
-              <Image
-                src={products2[0].imageUrl || ""}
-                alt={products2[0].title}
-                width={250} // ✅ Adjust image size
-                height={250}
-                className="product-image"
-              />
-              <a
-                href={products2[0].link || "#"}
-                target="_blank"
-                className="buy-link"
-              >
-                BUY • ${products2[0].price.toFixed(2)}
-              </a>
-            </div>
-          )}
         </div>
       </div>
 

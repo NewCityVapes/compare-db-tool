@@ -243,3 +243,122 @@ body {
   }
 }
 
+/* SHOPIFY HEADER AND FOOTER */
+/* SHOPIFY HEADER AND FOOTER */
+/* SHOPIFY HEADER AND FOOTER */
+
+#shopify-header img,
+#shopify-footer img {
+  max-width: 100%;
+}
+
+#shopify-header nav {
+  z-index: 9999 !important;
+}
+
+#shopify-footer {
+  margin-top: 40px;
+}
+
+/* ✅ Ensure Shopify header/footer are styled properly */
+#shopify-header {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  background: #fff;
+  z-index: 9999;
+}
+
+#shopify-footer {
+  width: 100%;
+  max-width: 1600px;
+  margin: 40px auto 0;
+  background: #f8f8f8;
+  padding: 20px;
+  text-align: center;
+}
+
+/* ✅ Prevents header/footer content from overflowing */
+#shopify-header nav,
+#shopify-footer div {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ✅ Fix Shopify dropdowns & links */
+#shopify-header a,
+#shopify-footer a {
+  text-decoration: none;
+  color: #2E323B;
+}
+
+/* ✅ Prevent layout shift */
+#shopify-header img,
+#shopify-footer img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ✅ Restrict icon sizes */
+#shopify-header svg,
+#shopify-footer svg {
+  max-width: 24px; /* ✅ Limits icon size */
+  max-height: 24px;
+}
+
+/* ✅ Prevent header logo from being massive */
+#shopify-header img {
+  max-width: 150px; /* ✅ Adjust based on your logo size */
+  height: auto;
+}
+
+/* ✅ Shopify Navigation Fix */
+#shopify-header nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+
+/* ✅ Ensure Full Page Height */
+/* ✅ Ensure Main Content Pushes Footer Down */
+html, body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-wrapper {
+  flex: 1; /* ✅ Makes the footer stick to bottom */
+}
+
+/* ✅ Force Desktop Header */
+#shopify-header {
+  display: block !important;
+}
+
+/* ✅ Ensure Footer is at Bottom */
+#shopify-footer {
+  position: relative;
+  bottom: 0;
+  width: 100%;
+}
+
+/* ✅ Force Desktop Header */
+@media (min-width: 990px) {
+  .header--top-center {
+    display: flex !important;
+  }
+  .menu-drawer-container {
+    display: none !important;
+  }
+}
+
+/* ✅ Hide Mobile Menu */
+@media (max-width: 989px) {
+  .header--top-center {
+    display: none !important;
+  }
+}

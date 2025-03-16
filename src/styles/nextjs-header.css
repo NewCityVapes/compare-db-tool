@@ -1,0 +1,71 @@
+
+/* Ensure Header Matches Shopify Desktop Version */
+#shopify-header {
+    background-color: black; /* Ensure black background */
+    padding: 10px 0;
+  }
+  
+  /* Center Logo and Ensure It’s Large */
+  #shopify-header .header__heading-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 200px; /* Adjust logo size */
+    margin: 0 auto;
+  }
+  
+  /* Fix Navigation Menu Alignment */
+  #shopify-header .list-menu {
+    display: flex;
+    justify-content: center; /* Align navigation items */
+    gap: 20px;
+  }
+  
+  /* Ensure Dropdown Menus Work Properly */
+  #shopify-header .list-menu--disclosure {
+    position: absolute;
+    min-width: 200px;
+    width: auto;
+    background: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    display: none; /* Hide by default */
+  }
+  
+  #shopify-header .list-menu__item:hover .list-menu--disclosure {
+    display: block; /* Show dropdown on hover */
+  }
+  
+  /* Fix Dropdown Click Behavior */
+  #shopify-header .mega-menu {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background: white;
+    display: none;
+    padding: 15px;
+  }
+  
+  #shopify-header .mega-menu.show {
+    display: block; /* Ensure it shows when active */
+  }
+  
+  /* Prevent Mobile Styles from Overriding Desktop */
+  @media screen and (max-width: 768px) {
+    #shopify-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    #shopify-header .list-menu {
+      flex-direction: column;
+    }
+  
+    #shopify-header .mega-menu {
+      width: 100%;
+      text-align: center;
+    }
+  }
+  

@@ -13,7 +13,8 @@ export default function ShopifyLayout({ type }: { type: "header" | "footer" }) {
         if (!res.ok) throw new Error(`Failed to fetch Shopify ${type}`);
         const data = await res.json();
 
-        setHtml(data.html || "");
+        // Ensure HTML is properly formatted
+        setHtml(data.html.trim());
       } catch (error) {
         console.error(`Error fetching Shopify ${type}:`, error);
       }

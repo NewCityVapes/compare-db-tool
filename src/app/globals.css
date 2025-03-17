@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
 
 :root {
   --background: #ffffff;
@@ -20,26 +22,26 @@ body {
   padding: 0;
 }
 
-/* ✅ Ensures full-width layout */
+/* ✅ Ensures full 4K support */
 .comparison-container {
   width: 100%;
-  max-width: 1600px;
+  max-width: 3840px; /* ✅ 4K resolution */
   margin: 0 auto;
   text-align: center;
 }
 
 /* ✅ Centers title and subtitle */
 .page-title {
-  font-size: 32px;
+  font-size: 42px;
   font-weight: bold;
   color: #2E323B;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 .page-subtitle {
-  font-size: 24px;
+  font-size: 26px;
   color: #cb9d64;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 /* ✅ Ensures proper spacing between dropdowns, images, and VS */
@@ -49,32 +51,32 @@ body {
   align-items: center;
   gap: 8%;
   width: 100%;
-  max-width: 1400px;
+  max-width: 2400px;
   margin: 0 auto;
   position: relative;
 }
 
-/* ✅ Proper alignment for product columns */
+/* ✅ Dropdown Proper Alignment */
 .product-column {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   flex: 1;
-  gap: 15px;
+  gap: 20px;
 }
 
-/* ✅ Ensures dropdowns fit content */
+/* ✅ Ensures dropdowns scale properly */
 .dropdown {
   width: auto;
-  min-width: 250px;
+  min-width: 280px;
   max-width: 100%;
   text-align: center;
-  font-size: 18px;
-  padding: 12px;
+  font-size: 20px;
+  padding: 14px;
   border: 2px solid #e5e5e5;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 10px;
   appearance: none;
   cursor: pointer;
   white-space: nowrap;
@@ -82,13 +84,13 @@ body {
 
 /* ✅ Placeholder prevents layout shift */
 .product-image-container {
-  width: 350px;
-  height: 350px;
+  width: 400px; /* ✅ Bigger images for 4K */
+  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #f5f5f5;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
 }
@@ -109,7 +111,7 @@ body {
   align-items: center;
   justify-content: center;
   color: #888;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   position: absolute;
 }
@@ -118,9 +120,9 @@ body {
 .buy-link {
   display: block;
   color: #cb9d64;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
-  margin-top: 5px;
+  margin-top: 8px;
   text-decoration: none;
 }
 
@@ -130,7 +132,7 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 40px;
+  font-size: 50px;
   font-weight: bold;
   color: #2E323B;
   white-space: nowrap;
@@ -138,17 +140,17 @@ body {
 
 /* ✅ Comparison table header */
 .comparison-header {
-  font-size: 25px;
+  font-size: 28px;
   font-weight: bold;
   color: #2E323B;
-  margin-top: 20px;
-  margin-bottom: 30px;
+  margin-top: 30px;
+  margin-bottom: 35px;
 }
 
 /* ✅ Ensures full-width comparison table */
 .comparison-table {
   width: 100%;
-  max-width: 1400px;
+  max-width: 2400px;
   margin: 0 auto;
 }
 
@@ -157,21 +159,21 @@ body {
   background-color: #f7f7f7;
   font-weight: bold;
   text-align: center;
-  padding: 15px;
+  padding: 18px;
   width: 100%;
 }
 
 /* ✅ Attribute values (Numbers under each header) */
 .attribute-values {
-  padding: 10px;
-  font-size: 18px;
+  padding: 12px;
+  font-size: 20px;
   display: flex;
   justify-content: space-around;
   align-items: center;
   width: 100%;
-  max-width: 1400px;
+  max-width: 2400px;
   margin: 0 auto;
-  gap: 30%;
+  gap: 35%;
 }
 
 /* ✅ Ensures proper alignment */
@@ -181,15 +183,11 @@ body {
 }
 
 /* MOBILE CSS */
-/* MOBILE CSS */
-/* MOBILE CSS */
-
 @media screen and (max-width: 768px) {
-  /* Ensure images are fully visible */
   .product-image-container {
-    width: 100%; /* Full width on mobile */
+    width: 100%;
     height: auto;
-    max-width: 250px; /* Limit size */
+    max-width: 300px;
     margin: 0 auto;
   }
 
@@ -199,40 +197,33 @@ body {
     object-fit: contain;
   }
 
-  /* Center the VS text */
   .vs-container {
-    display:none;
+    display: none;
   }
 
   .dropdown-container {
     display: flex;
-    flex-direction: column; /* ✅ Stack dropdowns vertically */
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100%;
     max-width: 100%;
-    gap: 10px; /* ✅ Reduce gap */
-    overflow-x: hidden; /* ✅ Prevent horizontal scrolling */
+    gap: 10px;
+    overflow-x: hidden;
     box-sizing: border-box;
   }
 
   .dropdown {
-    width: 90%; /* ✅ Ensures dropdowns fit within mobile screens */
-    max-width: 300px; /* ✅ Prevents excessive stretching */
+    width: 95%;
+    max-width: 320px;
     text-align: center;
   }
 
-  /* Adjust chart for mobile */
   .attribute-values {
-    flex-direction: row; /* Stack values vertically */
-    box-sizing: content-box; /* ✅ Ensures proper box sizing for mobile */
+    flex-direction: column;
+    box-sizing: content-box;
     align-items: center;
     gap: 5px;
-  }
-
-  .attribute-values span {
-    text-align: center;
-    width: 100%;
   }
 
   .comparison-container {
@@ -243,38 +234,21 @@ body {
   }
 }
 
-/* SHOPIFY HEADER AND FOOTER */
-/* SHOPIFY HEADER AND FOOTER */
-/* SHOPIFY HEADER AND FOOTER */
-
-#shopify-header img,
-#shopify-footer img {
-  max-width: 100%;
-}
-
-#shopify-header nav {
-  z-index: 9999 !important;
-}
-
-#shopify-footer {
-  margin-top: 40px;
-}
-
-/* ✅ Ensure Shopify header/footer are styled properly */
+/* SHOPIFY HEADER & FOOTER FIXES */
 #shopify-header {
   width: 100%;
-  max-width: 1600px;
+  max-width: 3840px;
   margin: 0 auto;
-  background: #fff;
+  background: #000; /* ✅ Black Background */
   z-index: 9999;
 }
 
 #shopify-footer {
   width: 100%;
-  max-width: 1600px;
+  max-width: 3840px;
   margin: 40px auto 0;
-  background: #f8f8f8;
-  padding: 20px;
+  background: #1a1a1a; /* ✅ Dark Footer */
+  padding: 30px;
   text-align: center;
 }
 
@@ -282,7 +256,7 @@ body {
 #shopify-header nav,
 #shopify-footer div {
   width: 100%;
-  max-width: 1200px;
+  max-width: 2400px;
   margin: 0 auto;
 }
 
@@ -290,40 +264,87 @@ body {
 #shopify-header a,
 #shopify-footer a {
   text-decoration: none;
-  color: #2E323B;
-}
-
-/* ✅ Prevent layout shift */
-#shopify-header img,
-#shopify-footer img {
-  max-width: 100%;
-  height: auto;
+  color: white; /* ✅ Ensure white text */
 }
 
 /* ✅ Restrict icon sizes */
 #shopify-header svg,
 #shopify-footer svg {
-  max-width: 24px; /* ✅ Limits icon size */
-  max-height: 24px;
+  max-width: 32px;
+  max-height: 32px;
 }
 
-/* ✅ Prevent header logo from being massive */
+/* ✅ Ensure Shopify Logo Matches Shopify Size */
 #shopify-header img {
-  max-width: 150px; /* ✅ Adjust based on your logo size */
-  height: auto;
+  width: 300px !important; /* ✅ Match Shopify */
+  max-width: 300px !important; /* ✅ Ensures consistency */
+  height: auto !important; /* ✅ Maintains aspect ratio */
+  display: block;
+  margin: 0 auto;
 }
 
-/* ✅ Shopify Navigation Fix */
-#shopify-header nav {
+@media (min-width: 1200px) {
+  .header__heading-logo {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header__heading-logo {
+    max-width: 250px;
+  }
+}
+
+/* ✅ HOME LINK STYLING - Matches Header Menu */
+/* ✅ HOME LINK - Match Shopify Header */
+/* ✅ Ensure the Home Link Stays Attached to the Header */
+/* ✅ Ensure Shopify Header Stays Structured */
+.shopify-header-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px;
+  flex-direction: column;
+  align-items: center; /* ✅ Center Logo & Nav */
+  justify-content: flex-start;
+  width: 100%;
+  background-color: black; /* ✅ Matches Shopify */
+  padding: 10px 0;
+  position: relative;
+  z-index: 1000;
 }
 
+/* ✅ Navigation Container (Ensures Proper Layout) */
+.home-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: auto; /* ✅ Pushes it down */
+  padding-bottom: 5px; /* ✅ Lowers it further */
+  gap: 30px; /* ✅ Adds spacing between links */
+}
+
+/* ✅ General Styling for All Links */
+.home-nav a {
+  font-family: "Roboto", sans-serif !important; /* ✅ Match Shopify Font */
+  font-weight: bold !important; /* ✅ Bold Text */
+  font-size: 14px !important; /* ✅ Match Header Menu Size */
+  color: #FAFAFABF !important; /* ✅ Exact Text Color */
+  text-decoration: none !important; /* ❌ No Underline by Default */
+  padding: 10px 20px; /* ✅ Increased Padding */
+  transition: color 0.3s ease-in-out;
+  display: block;
+  position: relative;
+  bottom: -15px; /* ✅ Pushes it even lower */
+}
+
+/* ✅ Match Hover Effect */
+.home-nav a:hover,
+.home-nav a:focus {
+  color: white !important; /* ✅ Turns White on Hover */
+  font-weight: bold !important; /* ✅ Ensures Bold on Hover */
+  text-decoration: underline !important; /* ✅ Underline on Hover */
+}
 
 /* ✅ Ensure Full Page Height */
-/* ✅ Ensure Main Content Pushes Footer Down */
 html, body {
   height: 100%;
   display: flex;
@@ -331,12 +352,7 @@ html, body {
 }
 
 .content-wrapper {
-  flex: 1; /* ✅ Makes the footer stick to bottom */
-}
-
-/* ✅ Force Desktop Header */
-#shopify-header {
-  display: block !important;
+  flex: 1;
 }
 
 /* ✅ Ensure Footer is at Bottom */
@@ -346,19 +362,36 @@ html, body {
   width: 100%;
 }
 
-/* ✅ Force Desktop Header */
-@media (min-width: 990px) {
-  .header--top-center {
-    display: flex !important;
-  }
-  .menu-drawer-container {
-    display: none !important;
-  }
+
+
+/* ANNOUNCEMENT BAR CSS */
+
+/* ✅ Match Shopify Font */
+.announcement-bar {
+  font-family: 'Roboto', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: bold !important;
+  padding: 9px 0 !important;
+  text-align: center;
+  width: 100% !important;
+  text-transform: uppercase; /* ✅ Ensure it's styled consistently */
+  letter-spacing: 0.5px;
 }
 
-/* ✅ Hide Mobile Menu */
-@media (max-width: 989px) {
-  .header--top-center {
-    display: none !important;
-  }
+
+/* ✅ Warning Bar - Black Background, White Text */
+.warning-bar {
+  background-color: #000;
+  color: #fff !important;
+ 
 }
+
+/* ✅ Free Shipping Bar - White Background, Black Text */
+.shipping-bar {
+   font-family: 'Roboto', sans-serif !important;
+  background-color: #fff;
+  color: #000;
+  font-size: 13px;
+  border-bottom: 1px solid #ddd; /* ✅ Adds a subtle separation */
+}
+

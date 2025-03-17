@@ -233,14 +233,75 @@ body {
     box-sizing: border-box;
   }
 }
+/* ANNOUNCEMENT BAR CSS */
 
-/* SHOPIFY HEADER & FOOTER FIXES */
-#shopify-header {
+/* ✅ Fix Announcement Bars - Keep Together & Hide on Scroll */
+.announcement-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  max-width: 3840px;
-  margin: 0 auto;
-  background: #000; /* ✅ Black Background */
+  z-index: 10000;
+  transition: transform 0.4s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ✅ Individual Announcement Bar Styling */
+.announcement-bar {
+  font-size: 13px;
+  font-family: 'Roboto', sans-serif;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 0;
+  color: #fff !important;
+}
+
+/* ✅ Ensure Content Doesn't Overlap Sticky Header */
+body {
+  padding-top: 250px;
+}
+/* ✅ WARNING BAR - Black Background, White Text */
+.warning-bar {
+  background-color: #000;
+  color: #fff;
+}
+
+/* ✅ FREE SHIPPING BAR - White Background, Black Text */
+.shipping-bar {
+  background-color: #fff;
+  color: #000!important ;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ✅ SHOPIFY HEADER - Stays Sticky */
+#shopify-header {
+  position: fixed;
+  top: 80px; /* Initial position, below the announcement bars */
+  left: 0;
+  width: 100%;
+  background: black;
   z-index: 9999;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: top 0.3s ease-in-out;
+}
+
+/* ✅ BODY PADDING - Prevent Overlapping */
+body {
+  padding-top: 250px; /* Adjust based on your header + announcement bars */
+}
+
+/* ✅ Ensure Header Moves to Top When Scrolling */
+.scrolled .announcement-wrapper {
+  transform: translateY(-100%);
+}
+
+
+/* ✅ MOVE HEADER TO TOP WHEN SCROLLING */
+.scrolled #shopify-header {
+  top: 0;
 }
 
 #shopify-footer {
@@ -295,9 +356,7 @@ body {
   }
 }
 
-/* ✅ HOME LINK STYLING - Matches Header Menu */
-/* ✅ HOME LINK - Match Shopify Header */
-/* ✅ Ensure the Home Link Stays Attached to the Header */
+
 /* ✅ Ensure Shopify Header Stays Structured */
 .shopify-header-container {
   display: flex;
@@ -310,6 +369,9 @@ body {
   position: relative;
   z-index: 1000;
 }
+
+
+
 
 /* ✅ Navigation Container (Ensures Proper Layout) */
 .home-nav {
@@ -380,35 +442,4 @@ html, body {
 }
 
 
-
-/* ANNOUNCEMENT BAR CSS */
-
-/* ✅ Match Shopify Font */
-.announcement-bar {
-  font-family: 'Roboto', sans-serif !important;
-  font-size: 13px !important;
-  font-weight: bold !important;
-  padding: 9px 0 !important;
-  text-align: center;
-  width: 100% !important;
-  text-transform: uppercase; /* ✅ Ensure it's styled consistently */
-  letter-spacing: 0.5px;
-}
-
-
-/* ✅ Warning Bar - Black Background, White Text */
-.warning-bar {
-  background-color: #000;
-  color: #fff !important;
- 
-}
-
-/* ✅ Free Shipping Bar - White Background, Black Text */
-.shipping-bar {
-   font-family: 'Roboto', sans-serif !important;
-  background-color: #fff;
-  color: #000;
-  font-size: 13px;
-  border-bottom: 1px solid #ddd; /* ✅ Adds a subtle separation */
-}
 

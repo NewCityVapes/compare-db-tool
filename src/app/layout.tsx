@@ -38,22 +38,44 @@ export default async function RootLayout({
           rel="stylesheet"
           href="https://newcityvapes.com/cdn/shop/t/1/assets/base.css"
         />
+
+        {/* ✅ Scroll Script to Hide Announcement Bars */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+            document.addEventListener("DOMContentLoaded", function () {
+              let lastScrollTop = 0;
+              window.addEventListener("scroll", function () {
+                let scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+                if (scrollTop > 100) {
+                  document.body.classList.add("scrolled"); // Hide announcement bars
+                } else {
+                  document.body.classList.remove("scrolled"); // Show bars on scroll up
+                }
+
+                lastScrollTop = scrollTop;
+              });
+            });
+          `,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* ✅ Warning Bar */}
-        <div className="announcement-bar warning-bar">
-          WARNING: VAPING PRODUCTS CONTAIN NICOTINE, A HIGHLY ADDICTIVE
-          CHEMICAL. - HEALTH CANADA
+        {/* ✅ Announcement Wrapper - Groups Both Bars */}
+        <div className="announcement-wrapper">
+          <div className="announcement-bar warning-bar">
+            WARNING: VAPING PRODUCTS CONTAIN NICOTINE, A HIGHLY ADDICTIVE
+            CHEMICAL. - HEALTH CANADA
+          </div>
+          <div className="announcement-bar shipping-bar">
+            FREE SHIPPING ON ORDERS OVER $50
+          </div>
         </div>
 
-        {/* ✅ Free Shipping Bar */}
-        <div className="announcement-bar shipping-bar">
-          FREE SHIPPING ON ORDERS OVER $50
-        </div>
-
-        {/* ✅ Inject Shopify Header Instantly */}
+        {/* ✅ Sticky Header */}
         <div id="shopify-header">
           <Image
             src="https://newcityvapes.com/cdn/shop/files/NCV_Logo_High_Resolution_Beige.png?v=1690925690"
@@ -61,11 +83,11 @@ export default async function RootLayout({
             width={300}
             height={113}
             className="header__heading-logo"
-            priority // ✅ Ensures it's loaded first for better performance
-            unoptimized // ✅ Allows Shopify-hosted images (CDN images)
+            priority
+            unoptimized
           />
 
-          {/* ✅ Home Link Under Logo */}
+          {/* ✅ Home Link & Navigation */}
           <nav className="home-nav">
             <a href="https://newcityvapes.com/" className="home-link">
               HOME

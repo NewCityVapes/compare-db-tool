@@ -344,6 +344,23 @@ body {
   text-decoration: underline !important; /* ✅ Underline on Hover */
 }
 
+/* ✅ Hide Everything Except "HOME" on Mobile & Center It */
+@media screen and (max-width: 768px) {
+  .home-nav {
+    justify-content: center; /* ✅ Centers "HOME" */
+  }
+
+  .home-nav a:not(:first-child) { /* ✅ Hide all except "HOME" */
+    display: none;
+  }
+
+  .home-nav a:first-child { /* ✅ Center "HOME" */
+    text-align: center;
+    width: 100%;
+    display: block;
+  }
+}
+
 /* ✅ Ensure Full Page Height */
 html, body {
   height: 100%;

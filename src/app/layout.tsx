@@ -2,20 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
-import ShopifyLayout from "../app/components/ShopifyLayout";
 import "../styles/nextjs-header.css";
-
-// ✅ Fetch Shopify Header Server-Side
-async function getShopifyHeader() {
-  try {
-    const res = await fetch("http://localhost:3000/api/shopify-header");
-    if (!res.ok) throw new Error("Failed to load Shopify header");
-    return await res.text();
-  } catch (error) {
-    console.error("Error loading Shopify header:", error);
-    return ""; // ✅ Return empty string on failure
-  }
-}
+import Image from "next/image";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,8 +26,6 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const shopifyHeader = await getShopifyHeader(); // ✅ Fetch header before rendering
-
   return (
     <html lang="en">
       <head>
@@ -69,12 +55,14 @@ export default async function RootLayout({
 
         {/* ✅ Inject Shopify Header Instantly */}
         <div id="shopify-header">
-          <img
-            src="//newcityvapes.com/cdn/shop/files/NCV_Logo_High_Resolution_Beige.png?v=1690925690"
+          <Image
+            src="https://newcityvapes.com/cdn/shop/files/NCV_Logo_High_Resolution_Beige.png?v=1690925690"
             alt="New City Vape Store"
-            width="300"
-            height="113"
+            width={300}
+            height={113}
             className="header__heading-logo"
+            priority // ✅ Ensures it's loaded first for better performance
+            unoptimized // ✅ Allows Shopify-hosted images (CDN images)
           />
 
           {/* ✅ Home Link Under Logo */}

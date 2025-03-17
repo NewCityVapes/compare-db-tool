@@ -2,21 +2,31 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const shopifyURL = "https://www.newcityvapes.com"; // ✅ Replace with your Shopify store URL
-    const res = await fetch(shopifyURL);
+    console.log("Fetching Shopify Footer...");
 
-    if (!res.ok) throw new Error("Failed to fetch Shopify header");
+    const shopifyURL = "https://newcityvapes.com"; // ✅ Your Shopify store URL
 
-    const html = await res.text();
+    const response = await fetch(shopifyURL, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    });
 
-    // Extract only the header section
-    const headerMatch = html.match(/<header.*?<\/header>/s);
-    const headerHtml = headerMatch ? headerMatch[0] : "";
+    const html = await response.text();
 
-    return new NextResponse(headerHtml, {
-      headers: { "Content-Type": "text/html" },
+    // ✅ Extract the footer using regex
+    const footerMatch = html.match(/<footer[\s\S]*?<\/footer>/);
+    const footer = footerMatch ? footerMatch[0] : "<footer>Not Found</footer>";
+
+    console.log("✅ Shopify Footer Fetched Successfully");
+
+    return NextResponse.json({
+      html: footer.replace(/\n/g, ""), // ✅ Remove extra new lines
     });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch Shopify header" });
+    console.error("Error fetching Shopify data:", error);
+    return NextResponse.json({ html: "<footer>Error loading footer</footer>" });
   }
 }

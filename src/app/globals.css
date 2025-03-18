@@ -44,6 +44,24 @@ body {
   margin-bottom: 25px;
 }
 
+/* ✅ Ensures dropdowns scale properly                                                                     DROPDOWN DROPDOWN*/
+.dropdown {
+  font-size: 16px !important; /* 🔥 Slightly Smaller Font */
+  padding: 12px 16px !important; /* 🔥 Better Padding */
+  min-width: 220px !important; /* 🔥 Consistent Width */
+  max-width: 100% !important;
+  background-color: white !important; /* 🔥 Clean Background */
+  border: 2px solid #e5e5e5 !important; /* 🔥 Subtle Border */
+  border-radius: 8px !important; /* 🔥 Softer Corners */
+  appearance: none !important;
+  cursor: pointer !important;
+  position: relative !important;
+  font-weight: bold !important; /* 🔥 Make Text Stand Out */
+  color: #333 !important;
+  text-align: left !important; /* 🔥 Align Text Left */
+  padding-right: 40px !important; /* 🔥 Space for Arrow */
+}
+
 /* ✅ Ensures proper spacing between dropdowns, images, and VS */
 .dropdown-container {
   display: flex;
@@ -56,6 +74,13 @@ body {
   position: relative;
 }
 
+
+
+/* ✅ Improve Hover Effect */
+.dropdown:hover {
+  border-color: #cb9d64 !important; /* 🔥 Accent Color */
+}
+
 /* ✅ Dropdown Proper Alignment */
 .product-column {
   display: flex;
@@ -66,21 +91,7 @@ body {
   gap: 20px;
 }
 
-/* ✅ Ensures dropdowns scale properly */
-.dropdown {
-  width: auto;
-  min-width: 280px;
-  max-width: 100%;
-  text-align: center;
-  font-size: 20px;
-  padding: 14px;
-  border: 2px solid #e5e5e5;
-  background-color: white;
-  border-radius: 10px;
-  appearance: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
+/* ✅ Ensures dropdowns scale properly                                                                     DROPDOWN EDNSDROPDOWN ENDS*/
 
 /* ✅ Placeholder prevents layout shift */
 .product-image-container {
@@ -404,8 +415,17 @@ body {
 }
 
 /* ✅ Hide Everything Except "HOME" on Mobile & Center It */
+/* ✅ MOBILE VIEW        MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW                    */
+/* ✅ MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       */
 @media screen and (max-width: 768px) {
 
+  .product-column {
+  
+    gap: 0px;
+  }
+  body {
+    padding-top: 230px; /* Adjust based on your header + announcement bars */
+  }
   #shopify-header {
     top: 100px; /* ✅ Push Header Down to Avoid Overlap */
   }
@@ -430,6 +450,65 @@ body {
     font-size: 13px; /* 🔥 Make HOME Text Taller */
     padding: 5px 0; /* 🔥 Increase Vertical Padding */
   }
+
+  .comparison-container {
+    max-width: 100% !important;
+    padding: 0 10px !important; /* 🔥 Reduce Padding */
+  }
+
+  .page-title {
+    font-size: 24px !important; /* 🔥 Smaller Title */
+    margin-bottom: 10px !important;
+  }
+
+  .page-subtitle {
+    font-size: 18px !important; /* 🔥 Smaller Subtitle */
+    margin-bottom: 15px !important;
+  }
+
+  .dropdown-container {
+    flex-direction: column !important; /* 🔥 Stack Dropdowns */
+    gap: 5px !important;
+  }
+
+  .dropdown {
+    font-size: 14px !important; /* 🔥 Reduce Font Size */
+    padding: 5px !important; /* 🔥 Reduce Padding */
+    min-width: 200px !important; /* 🔥 Smaller Min Width */
+  }
+
+  .product-image-container {
+    width: 220px !important; /* 🔥 Smaller Image Containers */
+    height: 220px !important;
+  }
+
+  .product-image {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 220px !important;
+  }
+
+  .vs-container {
+    font-size: 30px !important; /* 🔥 Reduce VS Font Size */
+  }
+
+  .comparison-table {
+    max-width: 100% !important;
+  }
+
+  .attribute-header {
+    font-size: 16px !important; /* 🔥 Smaller Table Headers */
+    padding: 10px !important;
+  }
+
+  .attribute-values {
+    font-size: 14px !important; /* 🔥 Smaller Table Values */
+    gap: 10px !important;
+  }
+  .dropdown-container::after {
+    font-size: 12px !important; /* 🔥 Smaller Arrow */
+  }
+  
 }
 
 /* ✅ Ensure Full Page Height */

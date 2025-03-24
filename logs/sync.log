@@ -3,3 +3,53 @@
 🛍️ Inserting 1750 products...
 ✅ Successfully Inserted 1750 products.
 🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T18:09:11.458Z
+🛍️ Inserting 1752 products...
+❌ Supabase Insert Error: {
+  "code": "42501",
+  "details": null,
+  "hint": null,
+  "message": "new row violates row-level security policy for table \"products\""
+}
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T18:14:18.604Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T18:18:58.994Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T18:21:45.485Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T23:27:25.385Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T23:35:36.795Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T23:35:56.878Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-23T23:42:56.051Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-24T01:03:01.846Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!

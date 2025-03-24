@@ -1,7 +1,14 @@
-import { supabase } from "../lib/supabase.mjs";
-import { fetchShopifyProducts } from "../lib/shopify.mjs";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 import fs from "fs";
 import path from "path";
+
+// ✅ Dynamically import Supabase + Shopify *after* env is loaded
+const { supabase } = await import("../lib/supabase.mjs");
+const { fetchShopifyProducts } = await import("../lib/shopify.mjs");
+
+
+
 
 async function syncProducts() {
   const timestamp = new Date().toISOString();
@@ -19,6 +26,8 @@ async function syncProducts() {
 
   console.log("⏳ Fetching Shopify Products...");
   const products = await fetchShopifyProducts();
+
+
 
   if (!products || products.length === 0) {
     console.error("❌ No products received from Shopify API.");

@@ -16,6 +16,8 @@ export default function ComparePage() {
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
 
+  /* test */
+
   type Product = {
     id: string;
     title: string;

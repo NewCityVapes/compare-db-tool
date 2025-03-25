@@ -137,16 +137,22 @@ body {
   text-decoration: none;
 }
 
-/* ✅ Ensures VS is centered properly */
 .vs-container {
   position: absolute;
-  left: 50%;
   top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   font-size: 50px;
   font-weight: bold;
   color: #2E323B;
   white-space: nowrap;
+  z-index: 10;
+  display: none;
+}
+@media (min-width: 768px) {
+  .vs-container {
+    display: block;
+  }
 }
 
 /* ✅ Comparison table header */
@@ -230,12 +236,7 @@ body {
     text-align: center;
   }
 
-  .attribute-values {
-    flex-direction: column;
-    box-sizing: content-box;
-    align-items: center;
-    gap: 5px;
-  }
+
 
   .comparison-container {
     width: 100%;

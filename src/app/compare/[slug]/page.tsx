@@ -99,7 +99,7 @@ export default function ComparePage() {
       <h1 className="page-title">Disposable Comparison Review</h1>
       <h2 className="page-subtitle">Which Vape is Better?</h2>
 
-      <div className="dropdown-container">
+      <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 relative text-center">
         {[
           { vendor: selectedVendor1, products: products1 },
           { vendor: selectedVendor2, products: products2 },
@@ -170,7 +170,7 @@ export default function ComparePage() {
           return (
             <div key={key} className="attribute-row">
               <div className="attribute-header">{label}</div>
-              <div className="attribute-values flex flex-col md:flex-row gap-2">
+              <div className="attribute-values flex flex-row gap-2 w-full justify-between">
                 <WinnerCell
                   val1={val1 as number}
                   val2={val2 as number}
@@ -189,17 +189,29 @@ export default function ComparePage() {
         ].map(({ label, key }) => (
           <div key={key} className="attribute-row">
             <div className="attribute-header">{label}</div>
-            <div className="attribute-values flex flex-col md:flex-row">
-              <span className="text-center md:text-left">
-                {products1.length > 0
-                  ? formatValue(products1[0][key as keyof Product], key)
-                  : "N/A"}
-              </span>
-              <span className="text-center md:text-right">
-                {products2.length > 0
-                  ? formatValue(products2[0][key as keyof Product], key)
-                  : "N/A"}
-              </span>
+            <div className="attribute-values flex flex-col md:flex-row gap-4 text-center">
+              <div className="w-full md:w-1/2">
+                {/* Mobile-only mini header */}
+                <div className="block md:hidden text-sm font-semibold text-gray-500 mb-1">
+                  {selectedVendor1}
+                </div>
+                <span>
+                  {products1.length > 0
+                    ? formatValue(products1[0][key as keyof Product], key)
+                    : "N/A"}
+                </span>
+              </div>
+              <div className="w-full md:w-1/2">
+                {/* Mobile-only mini header */}
+                <div className="block md:hidden text-sm font-semibold text-gray-500 mb-1">
+                  {selectedVendor2}
+                </div>
+                <span>
+                  {products2.length > 0
+                    ? formatValue(products2[0][key as keyof Product], key)
+                    : "N/A"}
+                </span>
+              </div>
             </div>
           </div>
         ))}
@@ -269,16 +281,20 @@ function WinnerCell({
 
   return (
     <>
-      <span className="text-center md:text-left w-full relative">
+      <span className="text-center w-1/2 relative">
         <span
-          className={`${baseStyle} ${winner === "left" ? winnerStyle : ""}`}
+          className={`${baseStyle} ${
+            winner === "left" ? winnerStyle : "opacity-70"
+          }`}
         >
           {formatValue(safe1, keyName)} {winner === "left" && <Trophy />}
         </span>
       </span>
-      <span className="text-center md:text-right w-full relative">
+      <span className="text-center w-1/2 relative">
         <span
-          className={`${baseStyle} ${winner === "right" ? winnerStyle : ""}`}
+          className={`${baseStyle} ${
+            winner === "right" ? winnerStyle : "opacity-70"
+          }`}
         >
           {formatValue(safe2, keyName)} {winner === "right" && <Trophy />}
         </span>

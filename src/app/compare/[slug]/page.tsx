@@ -1,3 +1,6 @@
+//*                           COMMAND TO RUN SCRIPT TO UPDATE SCRIPT FOR SUPABASE DB  *//
+//*                               node scripts/syncShopify.mjs                ((()((((())))))) **//
+
 "use client";
 import { useCallback, useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -149,6 +152,7 @@ export default function ComparePage() {
   type Product = {
     id: string;
     title: string;
+    vendor: string; // ✅ Add this line
     price: number;
     puffCount?: number;
     ml?: number;
@@ -204,8 +208,11 @@ export default function ComparePage() {
             </div>
             {item.products.length > 0 && (
               <a
-                href={item.products[0].link || "#"}
+                href={`https://newcityvapes.com/collections/${toSlug(
+                  item.products[0].vendor
+                )}`}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="buy-link"
               >
                 BUY • ${item.products[0].price.toFixed(2)}

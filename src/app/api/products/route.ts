@@ -4,7 +4,7 @@ import { NextResponse, NextRequest } from "next/server";
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const vendor = url.searchParams.get("vendor"); // Change let -> const ✅
+    const vendor = url.searchParams.get("vendor");
 
     if (!vendor) {
       return NextResponse.json(
@@ -13,13 +13,13 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const formattedVendor = vendor.replace(/-/g, " "); // Ensure correct format
+    const formattedVendor = vendor.trim().toLowerCase().replace(/-/g, " ");
     console.log(`🔍 Fetching products for vendor: "${formattedVendor}"`);
 
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .ilike("vendor", formattedVendor) // ✅ Ensure case-insensitive match
+      .ilike("vendor", formattedVendor)
       .limit(1000)
       .order("title", { ascending: true });
 

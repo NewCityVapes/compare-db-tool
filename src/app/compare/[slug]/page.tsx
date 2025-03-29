@@ -10,52 +10,33 @@ export default function ComparePage() {
 
   const slug = params?.slug as string;
 
-  const [rawVendor1, rawVendor2] = slug?.split("-vs-") || [];
+  const [redirecting, setRedirecting] = useState(true);
+  const [rawVendor1, setRawVendor1] = useState("");
+  const [rawVendor2, setRawVendor2] = useState("");
+
   const [selectedVendor1, setSelectedVendor1] = useState("");
   const [selectedVendor2, setSelectedVendor2] = useState("");
-
   const [vendors, setVendors] = useState<string[]>([]);
-
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
   const [verdict, setVerdict] = useState<string | null>(null);
 
-  /* test */
   useEffect(() => {
-    if (vendors.length && rawVendor1 && rawVendor2) {
-      const findOriginal = (slugPart: string) => {
-        return vendors.find(
-          (v) => toSlug(v) === decodeURIComponent(slugPart).toLowerCase()
-        );
-      };
-      const match1 = findOriginal(rawVendor1);
-      const match2 = findOriginal(rawVendor2);
-      if (match1) setSelectedVendor1(match1);
-      if (match2) setSelectedVendor2(match2);
+    if (!slug) return;
+
+    const [v1, v2] = slug.split("-vs-") || [];
+    const normalizedSlug = `${toSlug(decodeURIComponent(v1))}-vs-${toSlug(
+      decodeURIComponent(v2)
+    )}`;
+
+    if (slug !== normalizedSlug) {
+      router.replace(`/compare/${normalizedSlug}`);
+    } else {
+      setRawVendor1(v1);
+      setRawVendor2(v2);
+      setRedirecting(false);
     }
-  }, [vendors, rawVendor1, rawVendor2]);
-
-  function formatSlug(slug: string) {
-    return slug
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  }
-
-  type Product = {
-    id: string;
-    title: string;
-    price: number;
-    puffCount?: number;
-    ml?: number;
-    battery?: number;
-    imageUrl?: string;
-    link?: string;
-    pricePerPuff?: number;
-    pricePerML?: number;
-    numberOfFlavours?: number;
-    features?: string;
-    expertReview?: string;
-  };
+  }, [slug, router]);
 
   useEffect(() => {
     async function fetchVendors() {
@@ -71,10 +52,25 @@ export default function ComparePage() {
     fetchVendors();
   }, []);
 
+  useEffect(() => {
+    if (vendors.length && rawVendor1 && rawVendor2) {
+      const decodeAndMatch = (slugPart: string) => {
+        const decoded = decodeURIComponent(slugPart).toLowerCase();
+        return vendors.find((vendor) => toSlug(vendor) === decoded);
+      };
+
+      const vendor1Match = decodeAndMatch(rawVendor1);
+      const vendor2Match = decodeAndMatch(rawVendor2);
+
+      if (vendor1Match) setSelectedVendor1(vendor1Match);
+      if (vendor2Match) setSelectedVendor2(vendor2Match);
+    }
+  }, [vendors, rawVendor1, rawVendor2]);
+
   const fetchProducts = useCallback(
     async (vendor: string, setProducts: (data: Product[]) => void) => {
       try {
-        const formattedVendor = encodeURIComponent(vendor.replace(/-/g, " "));
+        const formattedVendor = encodeURIComponent(vendor.trim().toLowerCase());
         const res = await fetch(`/api/products?vendor=${formattedVendor}`);
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
@@ -116,8 +112,16 @@ export default function ComparePage() {
     }
   }, [selectedVendor1, selectedVendor2, fetchProducts]);
 
+  if (redirecting) return null;
+
   function toSlug(str: string) {
     return str.toLowerCase().replace(/\s+/g, "-");
+  }
+
+  function formatSlug(slug: string) {
+    return slug
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   function updateVendorSelection(vendor1: string, vendor2: string) {
@@ -131,8 +135,8 @@ export default function ComparePage() {
   ): string {
     if (value === null || value === undefined || value === "") return "N/A";
     const keysToFormatAsCurrency = ["price", "pricePerPuff", "pricePerML"];
+    const floatVal = typeof value === "number" ? value : parseFloat(value);
     if (keysToFormatAsCurrency.includes(key)) {
-      const floatVal = typeof value === "number" ? value : parseFloat(value);
       if (key === "pricePerPuff") {
         return isNaN(floatVal) ? "N/A" : `$${floatVal.toFixed(4)}`;
       } else {
@@ -141,6 +145,22 @@ export default function ComparePage() {
     }
     return value.toString();
   }
+
+  type Product = {
+    id: string;
+    title: string;
+    price: number;
+    puffCount?: number;
+    ml?: number;
+    battery?: number;
+    imageUrl?: string;
+    link?: string;
+    pricePerPuff?: number;
+    pricePerML?: number;
+    numberOfFlavours?: number;
+    features?: string;
+    expertReview?: string;
+  };
 
   return (
     <div className="comparison-container">
@@ -239,7 +259,6 @@ export default function ComparePage() {
             <div className="attribute-header">{label}</div>
             <div className="attribute-values flex flex-col md:flex-row gap-4 text-center">
               <div className="w-full md:w-1/2">
-                {/* Mobile-only mini header */}
                 <div className="block md:hidden text-sm font-semibold text-gray-500 mb-1">
                   {selectedVendor1}
                 </div>
@@ -250,7 +269,6 @@ export default function ComparePage() {
                 </span>
               </div>
               <div className="w-full md:w-1/2">
-                {/* Mobile-only mini header */}
                 <div className="block md:hidden text-sm font-semibold text-gray-500 mb-1">
                   {selectedVendor2}
                 </div>
@@ -313,7 +331,7 @@ function WinnerCell({
       } else {
         setWinner("right");
       }
-    }, 500 + index * 250); // cascade animation
+    }, 500 + index * 250);
 
     return () => clearTimeout(timeout);
   }, [safe1, safe2, keyName, index, higherIsBetter, lowerIsBetter]);

@@ -2,21 +2,44 @@
 import { useCallback, useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
+import { supabase } from "../../../../lib/supabase-browser"; // anon version for browser
 
 export default function ComparePage() {
   const router = useRouter();
   const params = useParams();
 
   const slug = params?.slug as string;
+
   const [rawVendor1, rawVendor2] = slug?.split("-vs-") || [];
-  const selectedVendor1 = decodeURIComponent(rawVendor1);
-  const selectedVendor2 = decodeURIComponent(rawVendor2);
+  const [selectedVendor1, setSelectedVendor1] = useState("");
+  const [selectedVendor2, setSelectedVendor2] = useState("");
 
   const [vendors, setVendors] = useState<string[]>([]);
+
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
+  const [verdict, setVerdict] = useState<string | null>(null);
 
   /* test */
+  useEffect(() => {
+    if (vendors.length && rawVendor1 && rawVendor2) {
+      const findOriginal = (slugPart: string) => {
+        return vendors.find(
+          (v) => toSlug(v) === decodeURIComponent(slugPart).toLowerCase()
+        );
+      };
+      const match1 = findOriginal(rawVendor1);
+      const match2 = findOriginal(rawVendor2);
+      if (match1) setSelectedVendor1(match1);
+      if (match2) setSelectedVendor2(match2);
+    }
+  }, [vendors, rawVendor1, rawVendor2]);
+
+  function formatSlug(slug: string) {
+    return slug
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
 
   type Product = {
     id: string;
@@ -64,16 +87,41 @@ export default function ComparePage() {
   );
 
   useEffect(() => {
+    async function fetchVerdict() {
+      if (!selectedVendor1 || !selectedVendor2) return;
+
+      const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
+
+      const { data, error } = await supabase
+        .from("verdicts")
+        .select("content")
+        .eq("slug", slug)
+        .single();
+
+      if (error) {
+        console.warn("No verdict found or Supabase error", error);
+        setVerdict(null);
+      } else {
+        setVerdict(data.content);
+      }
+    }
+
+    fetchVerdict();
+  }, [selectedVendor1, selectedVendor2]);
+
+  useEffect(() => {
     if (selectedVendor1 && selectedVendor2) {
       fetchProducts(selectedVendor1, setProducts1);
       fetchProducts(selectedVendor2, setProducts2);
     }
   }, [selectedVendor1, selectedVendor2, fetchProducts]);
 
+  function toSlug(str: string) {
+    return str.toLowerCase().replace(/\s+/g, "-");
+  }
+
   function updateVendorSelection(vendor1: string, vendor2: string) {
-    const newSlug = `${encodeURIComponent(
-      vendor1.trim()
-    )}-vs-${encodeURIComponent(vendor2.trim())}`;
+    const newSlug = `${toSlug(vendor1)}-vs-${toSlug(vendor2)}`;
     router.push(`/compare/${newSlug}`);
   }
 
@@ -151,7 +199,7 @@ export default function ComparePage() {
       </div>
 
       <h2 className="comparison-header">
-        {selectedVendor1} vs {selectedVendor2}
+        {formatSlug(selectedVendor1)} vs {formatSlug(selectedVendor2)}
       </h2>
 
       <div className="comparison-table">
@@ -215,6 +263,14 @@ export default function ComparePage() {
             </div>
           </div>
         ))}
+        {verdict && (
+          <div className="verdict-section mt-12 border-t border-gray-300 pt-8 max-w-3xl mx-auto text-center">
+            <h3 className="text-2xl font-bold mb-4">Verdict</h3>
+            <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-line">
+              {verdict}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

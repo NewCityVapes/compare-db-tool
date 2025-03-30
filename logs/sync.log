@@ -90,3 +90,23 @@
 🛍️ Inserting 1752 products...
 ✅ Successfully Inserted 1752 products.
 🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-30T01:37:07.615Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-30T01:45:49.550Z
+🛍️ Inserting 1752 products...
+❌ Supabase Insert Error: {
+  "code": "PGRST204",
+  "details": null,
+  "hint": null,
+  "message": "Could not find the 'collectionHandle' column of 'products' in the schema cache"
+}
+🎉 Sync Complete!
+
+🕒 Running Shopify Sync at 2025-03-30T01:46:44.555Z
+🛍️ Inserting 1752 products...
+✅ Successfully Inserted 1752 products.
+🎉 Sync Complete!

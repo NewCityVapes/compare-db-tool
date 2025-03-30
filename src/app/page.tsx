@@ -12,5 +12,5 @@ export default function HomePage() {
     );
   }, [router]); // ✅ Now `useEffect` runs properly if `router` changes
 
-  return <p>Redirecting...</p>; // ✅ Optional: Shows a message while redirecting
+  return <p>Loading Compare Page...</p>; // ✅ Optional: Shows a message while redirecting
 }

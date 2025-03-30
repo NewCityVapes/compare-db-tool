@@ -164,6 +164,7 @@ export default function ComparePage() {
     numberOfFlavours?: number;
     features?: string;
     expertReview?: string;
+    collectionHandle?: string; // ✅ Add this line
   };
 
   return (
@@ -208,11 +209,10 @@ export default function ComparePage() {
             </div>
             {item.products.length > 0 && (
               <a
-                href={`https://newcityvapes.com/collections/${toSlug(
-                  item.products[0].vendor
-                )}`}
+                href={`https://newcityvapes.com/collections/${
+                  item.products[0].collectionHandle || toSlug(item.vendor)
+                }`}
                 target="_blank"
-                rel="noopener noreferrer"
                 className="buy-link"
               >
                 BUY • ${item.products[0].price.toFixed(2)}

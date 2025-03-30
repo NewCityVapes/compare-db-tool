@@ -4,6 +4,13 @@ import "./globals.css";
 import Script from "next/script";
 import "../styles/nextjs-header.css";
 import Image from "next/image";
+import { Roboto } from "next/font/google";
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,7 +69,7 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${roboto.className} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {/* ✅ Announcement Wrapper - Groups Both Bars */}
         <div className="announcement-wrapper">

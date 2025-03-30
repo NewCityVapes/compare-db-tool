@@ -21,17 +21,19 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@tailwindcss/cli": "^4.0.17",
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^20",
     "@types/node-fetch": "^2.6.12",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.23.0",
     "eslint-config-next": "15.2.1",
     "postcss": "^8.5.3",
-    "tailwindcss": "^4.0.12",
+    "tailwindcss": "^4.0.17",
     "typescript": "^5"
   },
   "type": "module"

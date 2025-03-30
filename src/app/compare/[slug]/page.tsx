@@ -1,11 +1,11 @@
 //*                           COMMAND TO RUN SCRIPT TO UPDATE SCRIPT FOR SUPABASE DB  *//
 //*                               node scripts/syncShopify.mjs                ((()((((())))))) **//
-
 "use client";
 import { useCallback, useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { supabase } from "../../../../lib/supabase-browser"; // anon version for browser
+import { toSlug } from "../../../../lib/utils";
+import { supabase } from "../../../../lib/supabase-browser"; // ✅ Safe for frontend
 
 export default function ComparePage() {
   const router = useRouter();
@@ -23,6 +23,15 @@ export default function ComparePage() {
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
   const [verdict, setVerdict] = useState<string | null>(null);
+
+  const [winCounts, setWinCounts] = useState({ left: 0, right: 0 });
+
+  const handleWin = useCallback((winner: "left" | "right" | null) => {
+    setWinCounts((prev) => ({
+      left: prev.left + (winner === "left" ? 1 : 0),
+      right: prev.right + (winner === "right" ? 1 : 0),
+    }));
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -86,40 +95,55 @@ export default function ComparePage() {
   );
 
   useEffect(() => {
-    async function fetchVerdict() {
-      if (!selectedVendor1 || !selectedVendor2) return;
-
-      const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
-
-      const { data, error } = await supabase
-        .from("verdicts")
-        .select("content")
-        .eq("slug", slug)
-        .single();
-
-      if (error) {
-        console.warn("No verdict found or Supabase error", error);
-        setVerdict(null);
-      } else {
-        setVerdict(data.content);
-      }
-    }
-
-    fetchVerdict();
-  }, [selectedVendor1, selectedVendor2]);
-
-  useEffect(() => {
     if (selectedVendor1 && selectedVendor2) {
       fetchProducts(selectedVendor1, setProducts1);
       fetchProducts(selectedVendor2, setProducts2);
     }
   }, [selectedVendor1, selectedVendor2, fetchProducts]);
 
-  if (redirecting) return null;
+  useEffect(() => {
+    async function fetchVerdict() {
+      if (!selectedVendor1 || !selectedVendor2) return;
 
-  function toSlug(str: string) {
-    return str.toLowerCase().replace(/\s+/g, "-");
-  }
+      const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
+      console.log("🔍 Slug used to fetch verdict:", slug);
+
+      const { data, error } = await supabase
+        .from("verdicts")
+        .select("content")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      console.log("🧪 Raw verdict fetch:", data);
+
+      if (error) {
+        console.error("❌ Supabase verdict error:", error.message);
+        setVerdict(null);
+        return;
+      }
+
+      const content = data?.content;
+
+      console.log("🧪 typeof content:", typeof content);
+      console.log("🧪 content value:", content);
+      console.log("🧪 content length:", content?.trim().length);
+
+      if (typeof content === "string" && content.trim().length > 0) {
+        console.log("✅ Setting verdict:", content);
+        setVerdict(content);
+      } else {
+        console.warn("⚠ Verdict found, but 'content' is not a valid string");
+        setVerdict(null);
+      }
+    }
+
+    const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
+    console.log("🔍 Slug used in frontend fetch:", JSON.stringify(slug)); // <= This shows any hidden characters
+
+    fetchVerdict();
+  }, [selectedVendor1, selectedVendor2]);
+
+  if (redirecting) return null;
 
   function formatSlug(slug: string) {
     return slug
@@ -251,6 +275,7 @@ export default function ComparePage() {
                   val2={val2 as number}
                   keyName={key}
                   index={index}
+                  onWin={handleWin}
                 />
               </div>
             </div>
@@ -288,14 +313,35 @@ export default function ComparePage() {
             </div>
           </div>
         ))}
-        {verdict && (
-          <div className="verdict-section mt-12 border-t border-gray-300 pt-8 max-w-3xl mx-auto text-center">
-            <h3 className="text-2xl font-bold mb-4">Verdict</h3>
-            <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-line">
-              {verdict}
-            </p>
-          </div>
-        )}
+
+        <div className="flex flex-col items-center justify-center mt-10 py-10 px-6 rounded-xl bg-[#2E323B] shadow-xl border border-[#CB9D64] animate-pulse-slow text-center font-roboto text-[#E5E5E5]">
+          {/* Logo replaces the trophy icon */}
+
+          <Image
+            src="/NCV_Icon_Beige.png"
+            alt="New City Vapes Logo"
+            width={64}
+            height={64}
+            className="mb-4"
+          />
+          <h2 className="text-4xl md:text-5xl font-extrabold text-[#CB9D64] tracking-wide uppercase">
+            New City Vapes Verdict
+          </h2>
+          <p className="mt-4 text-2xl md:text-3xl font-semibold">
+            The Winner is{" "}
+            <span className="text-[#CB9D64] font-extrabold">
+              {winCounts.left > winCounts.right
+                ? selectedVendor1
+                : selectedVendor2}{" "}
+              🏆
+            </span>
+          </p>
+        </div>
+
+        <div
+          className="rich-verdict mt-6"
+          dangerouslySetInnerHTML={{ __html: verdict || "" }}
+        />
       </div>
     </div>
   );
@@ -306,11 +352,13 @@ function WinnerCell({
   val2,
   keyName,
   index,
+  onWin,
 }: {
   val1: number | null;
   val2: number | null;
   keyName: string;
   index: number;
+  onWin: (winner: "left" | "right" | null) => void;
 }) {
   const safe1 = val1 ?? 0;
   const safe2 = val2 ?? 0;
@@ -328,20 +376,25 @@ function WinnerCell({
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (safe1 === safe2) {
-        setWinner(null);
-      } else if (
-        (higherIsBetter && safe1 > safe2) ||
-        (lowerIsBetter && safe1 < safe2)
-      ) {
-        setWinner("left");
-      } else {
-        setWinner("right");
+      let newWinner: "left" | "right" | null = null;
+
+      if (safe1 !== safe2) {
+        if (
+          (higherIsBetter && safe1 > safe2) ||
+          (lowerIsBetter && safe1 < safe2)
+        ) {
+          newWinner = "left";
+        } else {
+          newWinner = "right";
+        }
       }
+
+      setWinner(newWinner);
+      onWin(newWinner);
     }, 500 + index * 250);
 
     return () => clearTimeout(timeout);
-  }, [safe1, safe2, keyName, index, higherIsBetter, lowerIsBetter]);
+  }, [safe1, safe2, keyName, index, higherIsBetter, lowerIsBetter, onWin]);
 
   const baseStyle =
     "w-full block text-center py-1 px-4 rounded-full transition-all duration-500 ease-out scale-95 opacity-80";

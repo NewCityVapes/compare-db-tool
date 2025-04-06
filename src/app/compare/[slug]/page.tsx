@@ -339,7 +339,7 @@ export default function ComparePage() {
         </div>
 
         <div
-          className="rich-verdict mt-6"
+          className="rich-verdict mt-20 max-w-6xl mx-auto text-left space-y-12"
           dangerouslySetInnerHTML={{ __html: verdict || "" }}
         />
       </div>

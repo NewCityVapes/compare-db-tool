@@ -547,4 +547,42 @@ html, body {
 }
 
 
+.rich-verdict h2 {
+  font-size: 2.5rem; /* 56px */
+  font-weight: 800;
+  color: #CB9D64;
+  margin-bottom: 1rem;
+}
+
+.rich-verdict h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.rich-verdict p {
+  font-size: 1.5rem;
+  line-height: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.rich-verdict ul {
+  padding-left: 2rem;
+  list-style-type: disc;
+  margin-bottom: 1.5rem;
+}
+
+.rich-verdict li {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-verdict a {
+  color: #CB9D64;
+  text-decoration: underline;
+}
+
+.rich-verdict a:hover {
+  color: #FFD580;
+}
 

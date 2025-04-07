@@ -1,13 +1,16 @@
 import CompareClient from "./Client";
+import { Metadata } from "next";
+import { toSlug } from "../../../../lib/utils";
 
 export const dynamic = "force-static";
 
+// ✅ Fix the typing here
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
-}) {
-  const slug = params.slug; // ✅ no await
+}): Promise<Metadata> {
+  const slug = params.slug;
 
   const title = slug
     .replace(/-/g, " ")

@@ -1,6 +1,8 @@
 import CompareClient from "./Client";
 import type { Metadata } from "next";
 
+export const dynamic = "force-static";
+
 export async function generateMetadata({
   params,
 }: {

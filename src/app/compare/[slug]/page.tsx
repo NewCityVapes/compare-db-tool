@@ -1,6 +1,5 @@
 import CompareClient from "./Client";
 import { Metadata } from "next";
-import { toSlug } from "../../../../lib/utils";
 
 export const dynamic = "force-static";
 

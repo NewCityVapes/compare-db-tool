@@ -1,4 +1,5 @@
-import { type Metadata } from "next";
+import CompareClient from "./Client";
+import type { Metadata } from "next";
 
 type Props = {
   params: { slug: string };
@@ -20,4 +21,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `https://compare.newcityvapes.com/compare/${slug}`,
     },
   };
+}
+
+export default function Page() {
+  return <CompareClient />;
 }

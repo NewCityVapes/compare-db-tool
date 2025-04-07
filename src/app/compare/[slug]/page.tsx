@@ -1,14 +1,10 @@
-import CompareClient from "./Client";
-import { Metadata } from "next";
+import { type Metadata } from "next";
 
-export const dynamic = "force-static";
-
-// ✅ Fix the typing here
-export async function generateMetadata({
-  params,
-}: {
+type Props = {
   params: { slug: string };
-}): Promise<Metadata> {
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slug = params.slug;
 
   const title = slug
@@ -24,8 +20,4 @@ export async function generateMetadata({
       url: `https://compare.newcityvapes.com/compare/${slug}`,
     },
   };
-}
-
-export default function Page() {
-  return <CompareClient />;
 }

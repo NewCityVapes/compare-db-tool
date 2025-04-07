@@ -33,6 +33,16 @@ export default function ComparePage() {
     }));
   }, []);
 
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300); // Show after 300px scroll
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   useEffect(() => {
     if (!slug) return;
 
@@ -281,6 +291,15 @@ export default function ComparePage() {
             </div>
           );
         })}
+
+        {showScrollTop && (
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="fixed bottom-6 right-6 z-50 px-3 py-1.5 text-xs bg-[#CB9D64] text-[#2E323B] font-medium rounded-full shadow-md hover:bg-[#e0b97f] transition duration-300"
+          >
+            ↑ Top
+          </button>
+        )}
 
         {/* Text-only fields — no highlight */}
         {[

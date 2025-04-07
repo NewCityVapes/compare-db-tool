@@ -436,9 +436,18 @@ body {
 /* ✅ MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       MOBILE VIEW       */
 @media screen and (max-width: 768px) {
 
+  
+  .comparison-header{
+    font-size: 1.2rem;
+  }
+
+
+  
+
+
   .product-column {
   
-    gap: 0px;
+    gap: 1px;
   }
   body {
     padding-top: 230px; /* Adjust based on your header + announcement bars */
@@ -584,5 +593,28 @@ html, body {
 
 .rich-verdict a:hover {
   color: #FFD580;
+}
+
+@media (max-width: 768px) {
+  .rich-verdict h2 { font-size: 1.5rem; }
+  .rich-verdict h3 { font-size: 1rem; }
+
+  .rich-verdict p {
+    font-size: 1rem;
+    line-height: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .rich-verdict ul {
+    padding-left: 1rem;
+    list-style-type: disc;
+    margin-bottom: 1rem;
+  }
+  
+  .rich-verdict li {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
 }
 

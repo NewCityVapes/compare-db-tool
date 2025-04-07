@@ -1,11 +1,11 @@
 import CompareClient from "./Client";
 import type { Metadata } from "next";
 
-type Props = {
+export async function generateMetadata({
+  params,
+}: {
   params: { slug: string };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+}): Promise<Metadata> {
   const slug = params.slug;
 
   const title = slug

@@ -3,12 +3,11 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-static";
 
-export async function generateMetadata({
-  params,
-}: {
+// ✅ Fix starts here
+export async function generateMetadata(props: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const slug = params.slug;
+  const slug = props.params.slug;
 
   const title = slug
     .replace(/-/g, " ")

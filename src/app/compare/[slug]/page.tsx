@@ -7,8 +7,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }) {
-  const awaitedParams = await params;
-  const slug = awaitedParams.slug;
+  const slug = params.slug; // ✅ no await
 
   const title = slug
     .replace(/-/g, " ")

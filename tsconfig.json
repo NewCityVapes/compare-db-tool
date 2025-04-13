@@ -1,8 +1,11 @@
 {
   "compilerOptions": {
-    
     "target": "es2020",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,9 +23,22 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "lib/supabase.mjs", "scripts/syncShopify.mjs", "lib/shopify.mjs"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "lib/supabase.mjs",
+    "scripts/syncShopify.mjs",
+    "lib/shopify.mjs",
+    "src/app/compare/[slug]/page.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

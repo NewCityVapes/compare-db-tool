@@ -1,28 +1,5 @@
+import * as React from "react";
 import CompareClient from "./Client";
-import type { Metadata } from "next";
-
-export const dynamic = "force-static";
-
-// ✅ Fix starts here
-export async function generateMetadata(props: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const slug = props.params.slug;
-
-  const title = slug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-  return {
-    title: `${title} | Vape Comparison – New City Vapes`,
-    description: `Compare features, flavors, battery, puff count, and expert verdicts between ${title}. Discover which disposable vape comes out on top.`,
-    openGraph: {
-      title: `${title} | Vape Comparison – New City Vapes`,
-      description: `Explore a side-by-side breakdown of ${title} to find the best value vape.`,
-      url: `https://compare.newcityvapes.com/compare/${slug}`,
-    },
-  };
-}
 
 export default function Page() {
   return <CompareClient />;

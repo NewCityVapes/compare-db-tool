@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
-export const dynamicParams = true; // ✅ Optional but explicit
+export const dynamicParams = true;
 
-export async function generateMetadata(context: {
+export async function generateMetadata({
+  params,
+}: {
   params: { slug?: string };
 }): Promise<Metadata> {
-  const params = await context.params;
-  const slug = params.slug;
+  const { slug } = params;
 
   if (!slug || !slug.includes("-vs-")) {
     return {
@@ -17,7 +18,6 @@ export async function generateMetadata(context: {
     };
   }
 
-  // Split slug into two vendor names
   const [raw1, raw2] = slug.split("-vs-");
 
   const formatVendor = (vendor: string) =>

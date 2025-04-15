@@ -36,7 +36,21 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=G-6WTQEQ7ERQ`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6WTQEQ7ERQ');
+  `}
+        </Script>
         {/* ✅ Load Shopify's JavaScript & CSS */}
+        <link rel="canonical" href="https://compare.newcityvapes.com" />
+        <meta name="robots" content="index, follow" />
         <Script
           src="https://newcityvapes.com/cdn/shop/t/1/assets/global.js"
           strategy="afterInteractive"

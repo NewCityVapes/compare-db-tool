@@ -3,12 +3,10 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug?: string };
+export async function generateMetadata(context: {
+  params: Promise<{ slug?: string }>;
 }): Promise<Metadata> {
-  const { slug } = params;
+  const { slug } = await context.params;
 
   if (!slug || !slug.includes("-vs-")) {
     return {
@@ -27,7 +25,6 @@ export async function generateMetadata({
 
   const vendor1 = formatVendor(raw1);
   const vendor2 = formatVendor(raw2);
-
   const title = `${vendor1} vs ${vendor2}`;
 
   return {
@@ -41,10 +38,11 @@ export async function generateMetadata({
   };
 }
 
+// ✅ REQUIRED default export: the layout component
 export default function CompareLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <div>{children}</div>; // ✅ MUST return JSX
 }

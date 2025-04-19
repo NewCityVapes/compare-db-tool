@@ -1,20 +1,36 @@
-import { supabase } from "../../../lib/supabase.mjs"; // adjust path if needed
+import { supabase } from "../../../lib/supabase.mjs";
 
 export async function GET() {
-  const { data: verdicts, error } = await supabase
-    .from("verdicts")
-    .select("slug");
+  let allSlugs: string[] = [];
+  let from = 0;
+  let to = 999;
+  let hasMore = true;
 
-  if (error || !verdicts) {
-    console.error(
-      "❌ Error fetching verdict slugs for sitemap:",
-      error?.message
-    );
-    return new Response("Error generating sitemap", { status: 500 });
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from("verdicts")
+      .select("slug")
+      .range(from, to);
+
+    if (error) {
+      console.error(
+        "❌ Error fetching verdict slugs for sitemap:",
+        error.message
+      );
+      return new Response("Error generating sitemap", { status: 500 });
+    }
+
+    if (!data || data.length === 0) {
+      hasMore = false;
+    } else {
+      allSlugs.push(...data.map((d) => d.slug));
+      from += 1000;
+      to += 1000;
+    }
   }
 
-  const urls = verdicts.map(
-    ({ slug }) =>
+  const urls = allSlugs.map(
+    (slug) =>
       `<url><loc>https://compare.newcityvapes.com/compare/${slug}</loc></url>`
   );
 

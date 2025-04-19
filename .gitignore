@@ -36,6 +36,8 @@ yarn-error.log*
 # vercel
 .vercel
 
+
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -48,3 +50,8 @@ node_modules/
 
 
 .vercel
+
+
+# Prevent committing secrets
+*.json
+!public/*.json

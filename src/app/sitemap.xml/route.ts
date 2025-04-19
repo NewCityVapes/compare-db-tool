@@ -1,7 +1,8 @@
 import { supabase } from "../../../lib/supabase.mjs";
 
 export async function GET() {
-  let allSlugs: string[] = [];
+  const allSlugs: string[] = [];
+
   let from = 0;
   let to = 999;
   let hasMore = true;

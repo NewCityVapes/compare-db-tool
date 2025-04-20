@@ -29,7 +29,7 @@ export default function ClientOnlyRender({
   const [vendors, setVendors] = useState<string[]>([]);
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
-  const [verdict, setVerdict] = useState<string | null>(null);
+  const [setVerdict] = useState<string | null>(null);
 
   const [winCounts, setWinCounts] = useState({ left: 0, right: 0 });
 

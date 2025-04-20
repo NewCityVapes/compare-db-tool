@@ -29,7 +29,6 @@ export default function ClientOnlyRender({
   const [vendors, setVendors] = useState<string[]>([]);
   const [products1, setProducts1] = useState<Product[]>([]);
   const [products2, setProducts2] = useState<Product[]>([]);
-  const [setVerdict] = useState<string | null>(null);
 
   const [winCounts, setWinCounts] = useState({ left: 0, right: 0 });
 
@@ -116,7 +115,7 @@ export default function ClientOnlyRender({
       const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
       console.log("🔍 Slug used to fetch verdict:", slug);
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("verdicts")
         .select("content")
         .eq("slug", slug)
@@ -124,25 +123,11 @@ export default function ClientOnlyRender({
 
       console.log("🧪 Raw verdict fetch:", data);
 
-      if (error) {
-        console.error("❌ Supabase verdict error:", error.message);
-        setVerdict(null);
-        return;
-      }
-
       const content = data?.content;
 
       console.log("🧪 typeof content:", typeof content);
       console.log("🧪 content value:", content);
       console.log("🧪 content length:", content?.trim().length);
-
-      if (typeof content === "string" && content.trim().length > 0) {
-        console.log("✅ Setting verdict:", content);
-        setVerdict(content);
-      } else {
-        console.warn("⚠ Verdict found, but 'content' is not a valid string");
-        setVerdict(null);
-      }
     }
 
     const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;

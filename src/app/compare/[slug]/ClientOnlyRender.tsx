@@ -2,16 +2,23 @@
 //*                               node scripts/syncShopify.mjs                ((()((((())))))) **//
 "use client";
 import { useCallback, useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toSlug } from "../../../../lib/utils";
 import { supabase } from "../../../../lib/supabase-browser"; // ✅ Safe for frontend
 
-export default function CompareClient() {
+export default function ClientOnlyRender({
+  vendor1,
+  vendor2,
+}: {
+  vendor1: string;
+  vendor2: string;
+}) {
   const router = useRouter();
-  const params = useParams();
 
-  const slug = params?.slug as string;
+  const slug = `${toSlug(decodeURIComponent(vendor1))}-vs-${toSlug(
+    decodeURIComponent(vendor2)
+  )}`;
 
   const [redirecting, setRedirecting] = useState(true);
   const [rawVendor1, setRawVendor1] = useState("");
@@ -43,23 +50,13 @@ export default function CompareClient() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
   useEffect(() => {
-    if (!slug) return;
-
-    const [v1, v2] = slug.split("-vs-") || [];
-    const normalizedSlug = `${toSlug(decodeURIComponent(v1))}-vs-${toSlug(
-      decodeURIComponent(v2)
-    )}`;
-
-    if (slug !== normalizedSlug) {
-      router.replace(`/compare/${normalizedSlug}`);
-    } else {
-      setRawVendor1(v1);
-      setRawVendor2(v2);
-      setRedirecting(false);
-    }
-  }, [slug, router]);
-
+    const [v1, v2] = slug.split("-vs-");
+    setRawVendor1(v1);
+    setRawVendor2(v2);
+    setRedirecting(false);
+  }, [slug]);
   useEffect(() => {
     async function fetchVendors() {
       try {
@@ -77,8 +74,8 @@ export default function CompareClient() {
   useEffect(() => {
     if (vendors.length && rawVendor1 && rawVendor2) {
       const decodeAndMatch = (slugPart: string) => {
-        const decoded = decodeURIComponent(slugPart).toLowerCase();
-        return vendors.find((vendor) => toSlug(vendor) === decoded);
+        const decodedSlug = toSlug(decodeURIComponent(slugPart));
+        return vendors.find((vendor) => toSlug(vendor) === decodedSlug);
       };
 
       const vendor1Match = decodeAndMatch(rawVendor1);
@@ -92,7 +89,8 @@ export default function CompareClient() {
   const fetchProducts = useCallback(
     async (vendor: string, setProducts: (data: Product[]) => void) => {
       try {
-        const formattedVendor = encodeURIComponent(vendor.trim().toLowerCase());
+        const formattedVendor = encodeURIComponent(toSlug(vendor));
+
         const res = await fetch(`/api/products?vendor=${formattedVendor}`);
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
@@ -357,10 +355,7 @@ export default function CompareClient() {
           </p>
         </div>
 
-        <div
-          className="rich-verdict mt-20 max-w-6xl mx-auto text-left space-y-12"
-          dangerouslySetInnerHTML={{ __html: verdict || "" }}
-        />
+        {/* Skip rendering client-side verdict since it's already rendered server-side */}
       </div>
     </div>
   );

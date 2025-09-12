@@ -103,7 +103,7 @@ export default async function RootLayout({
         {/* ✅ Sticky Header */}
         <div id="shopify-header">
           <Image
-            src="https://newcityvapes.com/cdn/shop/files/NCV_Logo_High_Resolution_Beige.png?v=1690925690"
+            src="/logo.png"
             alt="New City Vape Store"
             width={300}
             height={113}

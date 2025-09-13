@@ -36,7 +36,7 @@
     "lib/supabase.mjs",
     "scripts/syncShopify.mjs",
     "lib/shopify.mjs",
-    "src/app/compare/[slug]/page.tsx"
+    "src/app/compare/[slug]/page.jsx"
   ],
   "exclude": [
     "node_modules"

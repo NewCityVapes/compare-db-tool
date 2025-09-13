@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "csv-parser": "^3.2.0",
     "dotenv": "^16.4.7",
+    "iron-session": "^6.3.1",
     "next": "^15.3.0",
     "node-fetch": "^3.0.0",
     "postcss-import": "^16.1.0",

@@ -13,6 +13,9 @@ export async function generateMetadata(context: {
       title: "Compare Disposables | New City Vapes",
       description:
         "Explore side-by-side vape comparisons across top disposable brands.",
+      alternates: {
+        canonical: "https://compare.newcityvapes.com",
+      },
     };
   }
 
@@ -35,14 +38,13 @@ export async function generateMetadata(context: {
       description: `Explore a side-by-side breakdown of ${title} to find the best value vape.`,
       url: `https://compare.newcityvapes.com/compare/${slug}`,
     },
+    twitter: {
+      title: `${title} | Vape Comparison – New City Vapes`,
+      description: `Explore a side-by-side breakdown of ${title} to find the best value vape.`,
+      card: "summary",
+    },
+    alternates: {
+      canonical: `https://compare.newcityvapes.com/compare/${slug}`,
+    },
   };
-}
-
-// ✅ REQUIRED default export: the layout component
-export default function CompareLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <div>{children}</div>; // ✅ MUST return JSX
 }

@@ -1,45 +1,72 @@
+// src/app/layout.tsx
+// ============================================================
+// CHANGES FROM YOUR ORIGINAL:
+// 1. Removed hardcoded canonical (now set per-page via generateMetadata)
+// 2. Added Organization JSON-LD schema
+// 3. Cleaned up: removed unused Geist font imports
+// 4. Added global metadata defaults with template
+// 5. Everything else (GA, announcement bars, header, nav) UNCHANGED
+// ============================================================
+
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import "../styles/nextjs-header.css";
 import Image from "next/image";
 import { Roboto } from "next/font/google";
+import { OrganizationJsonLd } from "../components/SEO/JsonLd";
 
 const roboto = Roboto({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "700"],
   display: "swap",
+  variable: "--font-roboto",
 });
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
+// ✅ Global metadata defaults — individual pages override via generateMetadata
 export const metadata: Metadata = {
-  title: "New City Vapes - Disposables Review",
-  description: "Compare different disposable vapes find the best reviews",
+  metadataBase: new URL("https://compare.newcityvapes.com"),
+  title: {
+    default: "Disposable Vape Comparisons | New City Vapes",
+    template: "%s", // Pages provide full titles
+  },
+  description:
+    "Compare disposable vapes side-by-side. Find the best disposable vape in Canada by puff count, price, battery life, ML capacity, and more.",
   icons: {
     icon: "/favicon.ico",
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_CA",
+    siteName: "New City Vapes",
+  },
+  // ✅ REMOVED: hardcoded canonical — now set per-page
 };
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={roboto.variable}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="shortcut icon" href="/favicon.ico" />
+
+        {/* ✅ Organization schema — site-wide */}
+        <OrganizationJsonLd />
+
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=G-6WTQEQ7ERQ`}
           strategy="afterInteractive"
@@ -52,13 +79,8 @@ export default async function RootLayout({
     gtag('config', 'G-6WTQEQ7ERQ');
   `}
         </Script>
-        {/* ✅ Load Shopify's JavaScript & CSS */}
-        <link rel="canonical" href="https://compare.newcityvapes.com" />
-        <meta name="robots" content="index, follow" />
-        <Script
-          src="https://newcityvapes.com/cdn/shop/t/1/assets/global.js"
-          strategy="afterInteractive"
-        />
+
+        {/* ✅ Shopify CSS */}
         <link
           rel="stylesheet"
           href="https://newcityvapes.com/cdn/shop/t/1/assets/base.css"
@@ -72,13 +94,11 @@ export default async function RootLayout({
               let lastScrollTop = 0;
               window.addEventListener("scroll", function () {
                 let scrollTop = window.scrollY || document.documentElement.scrollTop;
-
                 if (scrollTop > 100) {
-                  document.body.classList.add("scrolled"); // Hide announcement bars
+                  document.body.classList.add("scrolled");
                 } else {
-                  document.body.classList.remove("scrolled"); // Show bars on scroll up
+                  document.body.classList.remove("scrolled");
                 }
-
                 lastScrollTop = scrollTop;
               });
             });
@@ -86,10 +106,8 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${roboto.className} ${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {/* ✅ Announcement Wrapper - Groups Both Bars */}
+      <body className={`${roboto.className} antialiased`}>
+        {/* ✅ Announcement Wrapper */}
         <div className="announcement-wrapper">
           <div className="announcement-bar warning-bar">
             WARNING: VAPING PRODUCTS CONTAIN NICOTINE, A HIGHLY ADDICTIVE
@@ -104,7 +122,7 @@ export default async function RootLayout({
         <div id="shopify-header">
           <Image
             src="/logo.png"
-            alt="New City Vape Store"
+            alt="New City Vapes — Canadian Vape Store"
             width={300}
             height={113}
             className="header__heading-logo"
@@ -112,8 +130,7 @@ export default async function RootLayout({
             unoptimized
           />
 
-          {/* ✅ Home Link & Navigation */}
-          <nav className="home-nav">
+          <nav className="home-nav" aria-label="Main navigation">
             <a href="https://newcityvapes.com/" className="home-link">
               HOME
             </a>

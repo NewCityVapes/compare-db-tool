@@ -1,0 +1,26 @@
+diff --git a/node_modules/iron-session/getPropertyDescriptorForReqSession.js b/node_modules/iron-session/getPropertyDescriptorForReqSession.js
+new file mode 100644
+index 0000000..dfa7d66
+--- /dev/null
++++ b/node_modules/iron-session/getPropertyDescriptorForReqSession.js
+@@ -0,0 +1,8 @@
++export default function getPropertyDescriptorForReqSession(session) {
++  return {
++    value: session,
++    writable: true,
++    enumerable: true,
++    configurable: true,
++  };
++}
+diff --git a/node_modules/iron-session/next/index.ts b/node_modules/iron-session/next/index.ts
+index 7d78069..1451bea 100644
+--- a/node_modules/iron-session/next/index.ts
++++ b/node_modules/iron-session/next/index.ts
+@@ -7,7 +7,6 @@ import type {
+ } from "next";
+ import type { IronSessionOptions } from "iron-session";
+ import { getIronSession } from "iron-session";
+-import getPropertyDescriptorForReqSession from "../src/getPropertyDescriptorForReqSession";
+ import { IncomingMessage, ServerResponse } from "http";
+ 
+ // Argument types based on getIronSession function

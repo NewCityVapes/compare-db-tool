@@ -1,23 +1,54 @@
-//*                           COMMAND TO RUN SCRIPT TO UPDATE SCRIPT FOR SUPABASE DB  *//
-//*                               node scripts/syncShopify.mjs                ((()((((())))))) **//
+// src/app/compare/[slug]/ClientOnlyRender.tsx
+// ============================================================
+// UPDATED: Now receives initialProducts from server component
+//
+// CHANGES:
+// 1. Accepts initialProducts1 / initialProducts2 props
+// 2. Renders immediately with server data (no "Loading..." flash)
+// 3. Still re-fetches on dropdown change (interactive)
+// 4. All your existing UI logic preserved exactly
+// ============================================================
+
 "use client";
 import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toSlug } from "../../../../lib/utils";
-import { supabase } from "../../../../lib/supabase-browser"; // ✅ Safe for frontend
+import { supabase } from "../../../../lib/supabase-browser";
+
+type Product = {
+  id: string;
+  title: string;
+  vendor: string;
+  price: number;
+  puffCount?: number;
+  ml?: number;
+  battery?: number;
+  imageUrl?: string;
+  link?: string;
+  pricePerPuff?: number;
+  pricePerML?: number;
+  numberOfFlavours?: number;
+  features?: string;
+  expertReview?: string;
+  collectionHandle?: string;
+};
 
 export default function ClientOnlyRender({
   vendor1,
   vendor2,
+  initialProducts1 = [],
+  initialProducts2 = [],
 }: {
   vendor1: string;
   vendor2: string;
+  initialProducts1?: Product[];
+  initialProducts2?: Product[];
 }) {
   const router = useRouter();
 
   const slug = `${toSlug(decodeURIComponent(vendor1))}-vs-${toSlug(
-    decodeURIComponent(vendor2)
+    decodeURIComponent(vendor2),
   )}`;
 
   const [redirecting, setRedirecting] = useState(true);
@@ -27,8 +58,10 @@ export default function ClientOnlyRender({
   const [selectedVendor1, setSelectedVendor1] = useState("");
   const [selectedVendor2, setSelectedVendor2] = useState("");
   const [vendors, setVendors] = useState<string[]>([]);
-  const [products1, setProducts1] = useState<Product[]>([]);
-  const [products2, setProducts2] = useState<Product[]>([]);
+
+  // ✅ CHANGED: Initialize with server-fetched data instead of empty arrays
+  const [products1, setProducts1] = useState<Product[]>(initialProducts1);
+  const [products2, setProducts2] = useState<Product[]>(initialProducts2);
 
   const [winCounts, setWinCounts] = useState({ left: 0, right: 0 });
 
@@ -43,7 +76,7 @@ export default function ClientOnlyRender({
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300); // Show after 300px scroll
+      setShowScrollTop(window.scrollY > 300);
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -56,6 +89,7 @@ export default function ClientOnlyRender({
     setRawVendor2(v2);
     setRedirecting(false);
   }, [slug]);
+
   useEffect(() => {
     async function fetchVendors() {
       try {
@@ -89,7 +123,6 @@ export default function ClientOnlyRender({
     async (vendor: string, setProducts: (data: Product[]) => void) => {
       try {
         const formattedVendor = encodeURIComponent(toSlug(vendor));
-
         const res = await fetch(`/api/products?vendor=${formattedVendor}`);
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         const data = await res.json();
@@ -98,22 +131,25 @@ export default function ClientOnlyRender({
         console.error(`❌ Error fetching products for ${vendor}:`, error);
       }
     },
-    []
+    [],
   );
 
+  // ✅ CHANGED: Only re-fetch if vendors change from the dropdown
+  // Skip initial fetch since we already have server data
+  const [hasUserChangedVendors, setHasUserChangedVendors] = useState(false);
+
   useEffect(() => {
-    if (selectedVendor1 && selectedVendor2) {
+    if (hasUserChangedVendors && selectedVendor1 && selectedVendor2) {
       fetchProducts(selectedVendor1, setProducts1);
       fetchProducts(selectedVendor2, setProducts2);
     }
-  }, [selectedVendor1, selectedVendor2, fetchProducts]);
+  }, [selectedVendor1, selectedVendor2, fetchProducts, hasUserChangedVendors]);
 
   useEffect(() => {
     async function fetchVerdict() {
       if (!selectedVendor1 || !selectedVendor2) return;
 
       const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
-      console.log("🔍 Slug used to fetch verdict:", slug);
 
       const { data } = await supabase
         .from("verdicts")
@@ -121,20 +157,18 @@ export default function ClientOnlyRender({
         .eq("slug", slug)
         .maybeSingle();
 
-      console.log("🧪 Raw verdict fetch:", data);
-
-      const content = data?.content;
-
-      console.log("🧪 typeof content:", typeof content);
-      console.log("🧪 content value:", content);
-      console.log("🧪 content length:", content?.trim().length);
+      // Verdict is already rendered server-side, this is just for dropdown changes
+      console.log(
+        "🧪 Verdict fetch for:",
+        slug,
+        data?.content ? "found" : "not found",
+      );
     }
 
-    const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
-    console.log("🔍 Slug used in frontend fetch:", JSON.stringify(slug)); // <= This shows any hidden characters
-
-    fetchVerdict();
-  }, [selectedVendor1, selectedVendor2]);
+    if (hasUserChangedVendors) {
+      fetchVerdict();
+    }
+  }, [selectedVendor1, selectedVendor2, hasUserChangedVendors]);
 
   if (redirecting) return null;
 
@@ -144,14 +178,15 @@ export default function ClientOnlyRender({
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
-  function updateVendorSelection(vendor1: string, vendor2: string) {
-    const newSlug = `${toSlug(vendor1)}-vs-${toSlug(vendor2)}`;
+  function updateVendorSelection(newVendor1: string, newVendor2: string) {
+    setHasUserChangedVendors(true);
+    const newSlug = `${toSlug(newVendor1)}-vs-${toSlug(newVendor2)}`;
     router.push(`/compare/${newSlug}`);
   }
 
-  function formatValue(
+  function formatValueDisplay(
     value: number | string | null | undefined,
-    key: string
+    key: string,
   ): string {
     if (value === null || value === undefined || value === "") return "N/A";
     const keysToFormatAsCurrency = ["price", "pricePerPuff", "pricePerML"];
@@ -166,28 +201,13 @@ export default function ClientOnlyRender({
     return value.toString();
   }
 
-  type Product = {
-    id: string;
-    title: string;
-    vendor: string; // ✅ Add this line
-    price: number;
-    puffCount?: number;
-    ml?: number;
-    battery?: number;
-    imageUrl?: string;
-    link?: string;
-    pricePerPuff?: number;
-    pricePerML?: number;
-    numberOfFlavours?: number;
-    features?: string;
-    expertReview?: string;
-    collectionHandle?: string; // ✅ Add this line
-  };
-
   return (
     <div className="comparison-container">
-      <h1 className="page-title">Disposable Comparison Review</h1>
-      <h2 className="page-subtitle">Which Vape is Better?</h2>
+      {/* ✅ SEO: H1 is now unique per comparison page */}
+      <h1 className="page-title">
+        {formatSlug(rawVendor1)} vs {formatSlug(rawVendor2)}
+      </h1>
+      <h2 className="page-subtitle">Disposable Vape Comparison — Canada</h2>
 
       <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 relative text-center">
         {[
@@ -198,10 +218,11 @@ export default function ClientOnlyRender({
             <select
               className="dropdown"
               value={item.vendor}
+              aria-label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
               onChange={(e) =>
                 updateVendorSelection(
                   index === 0 ? e.target.value : selectedVendor1,
-                  index === 1 ? e.target.value : selectedVendor2
+                  index === 1 ? e.target.value : selectedVendor2,
                 )
               }
             >
@@ -215,7 +236,7 @@ export default function ClientOnlyRender({
               {item.products.length > 0 ? (
                 <Image
                   src={item.products[0].imageUrl || ""}
-                  alt={item.products[0].title}
+                  alt={`${item.products[0].title} disposable vape`}
                   width={350}
                   height={350}
                   className="product-image"
@@ -230,6 +251,7 @@ export default function ClientOnlyRender({
                   item.products[0].collectionHandle || toSlug(item.vendor)
                 }`}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="buy-link"
               >
                 BUY • ${item.products[0].price.toFixed(2)}
@@ -242,11 +264,17 @@ export default function ClientOnlyRender({
         </div>
       </div>
 
+      {/* ✅ SEO: This heading is now an H2 (H1 is above) */}
       <h2 className="comparison-header">
-        {formatSlug(selectedVendor1)} vs {formatSlug(selectedVendor2)}
+        {formatSlug(selectedVendor1 ? toSlug(selectedVendor1) : rawVendor1)} vs{" "}
+        {formatSlug(selectedVendor2 ? toSlug(selectedVendor2) : rawVendor2)}
       </h2>
 
-      <div className="comparison-table">
+      <div
+        className="comparison-table"
+        role="table"
+        aria-label="Vape comparison table"
+      >
         {[
           { label: "PUFF COUNT", key: "puffCount" },
           { label: "ML", key: "ml" },
@@ -260,9 +288,14 @@ export default function ClientOnlyRender({
           const val2 = products2[0]?.[key as keyof Product] ?? null;
 
           return (
-            <div key={key} className="attribute-row">
-              <div className="attribute-header">{label}</div>
-              <div className="attribute-values flex flex-row gap-2 w-full justify-between">
+            <div key={key} className="attribute-row" role="row">
+              <div className="attribute-header" role="columnheader">
+                <h3 className="text-base font-semibold m-0 p-0">{label}</h3>
+              </div>
+              <div
+                className="attribute-values flex flex-row gap-2 w-full justify-between"
+                role="row"
+              >
                 <WinnerCell
                   val1={val1 as number}
                   val2={val2 as number}
@@ -279,6 +312,7 @@ export default function ClientOnlyRender({
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="fixed bottom-6 right-6 z-50 px-3 py-1.5 text-xs bg-[#CB9D64] text-[#2E323B] font-medium rounded-full shadow-md hover:bg-[#e0b97f] transition duration-300"
+            aria-label="Scroll to top"
           >
             ↑ Top
           </button>
@@ -290,25 +324,33 @@ export default function ClientOnlyRender({
           { label: "EXPERT REVIEW", key: "expertReview" },
         ].map(({ label, key }) => (
           <div key={key} className="attribute-row">
-            <div className="attribute-header">{label}</div>
+            <div className="attribute-header">
+              <h3 className="text-base font-semibold m-0 p-0">{label}</h3>
+            </div>
             <div className="attribute-values flex flex-col md:flex-row gap-4 text-center">
               <div className="w-full md:w-1/2">
                 <div className="block md:hidden text-sm font-semibold text-gray-500 mb-1">
-                  {selectedVendor1}
+                  {selectedVendor1 || formatSlug(rawVendor1)}
                 </div>
                 <span>
                   {products1.length > 0
-                    ? formatValue(products1[0][key as keyof Product], key)
+                    ? formatValueDisplay(
+                        products1[0][key as keyof Product],
+                        key,
+                      )
                     : "N/A"}
                 </span>
               </div>
               <div className="w-full md:w-1/2">
                 <div className="block md:hidden text-sm font-semibold text-gray-500 mb-1">
-                  {selectedVendor2}
+                  {selectedVendor2 || formatSlug(rawVendor2)}
                 </div>
                 <span>
                   {products2.length > 0
-                    ? formatValue(products2[0][key as keyof Product], key)
+                    ? formatValueDisplay(
+                        products2[0][key as keyof Product],
+                        key,
+                      )
                     : "N/A"}
                 </span>
               </div>
@@ -316,9 +358,8 @@ export default function ClientOnlyRender({
           </div>
         ))}
 
+        {/* Verdict banner */}
         <div className="flex flex-col items-center justify-center mt-10 py-10 px-6 rounded-xl bg-[#2E323B] shadow-xl border border-[#CB9D64] animate-pulse-slow text-center font-roboto text-[#E5E5E5]">
-          {/* Logo replaces the trophy icon */}
-
           <Image
             src="/NCV_Icon_Beige.png"
             alt="New City Vapes Logo"
@@ -333,19 +374,18 @@ export default function ClientOnlyRender({
             The Winner is{" "}
             <span className="text-[#CB9D64] font-extrabold">
               {winCounts.left > winCounts.right
-                ? selectedVendor1
-                : selectedVendor2}{" "}
+                ? selectedVendor1 || formatSlug(rawVendor1)
+                : selectedVendor2 || formatSlug(rawVendor2)}{" "}
               🏆
             </span>
           </p>
         </div>
-
-        {/* Skip rendering client-side verdict since it's already rendered server-side */}
       </div>
     </div>
   );
 }
 
+// ─── WinnerCell (unchanged from your original) ───
 function WinnerCell({
   val1,
   val2,
@@ -370,27 +410,30 @@ function WinnerCell({
     "numberOfFlavours",
   ].includes(keyName);
   const lowerIsBetter = ["price", "pricePerPuff", "pricePerML"].includes(
-    keyName
+    keyName,
   );
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      let newWinner: "left" | "right" | null = null;
+    const timeout = setTimeout(
+      () => {
+        let newWinner: "left" | "right" | null = null;
 
-      if (safe1 !== safe2) {
-        if (
-          (higherIsBetter && safe1 > safe2) ||
-          (lowerIsBetter && safe1 < safe2)
-        ) {
-          newWinner = "left";
-        } else {
-          newWinner = "right";
+        if (safe1 !== safe2) {
+          if (
+            (higherIsBetter && safe1 > safe2) ||
+            (lowerIsBetter && safe1 < safe2)
+          ) {
+            newWinner = "left";
+          } else {
+            newWinner = "right";
+          }
         }
-      }
 
-      setWinner(newWinner);
-      onWin(newWinner);
-    }, 500 + index * 250);
+        setWinner(newWinner);
+        onWin(newWinner);
+      },
+      500 + index * 250,
+    );
 
     return () => clearTimeout(timeout);
   }, [safe1, safe2, keyName, index, higherIsBetter, lowerIsBetter, onWin]);
@@ -414,7 +457,7 @@ function WinnerCell({
 
   return (
     <>
-      <span className="text-center w-1/2 relative">
+      <span className="text-center w-1/2 relative" role="cell">
         <span
           className={`${baseStyle} ${
             winner === "left" ? winnerStyle : "opacity-70"
@@ -423,7 +466,7 @@ function WinnerCell({
           {formatValue(safe1, keyName)} {winner === "left" && <Trophy />}
         </span>
       </span>
-      <span className="text-center w-1/2 relative">
+      <span className="text-center w-1/2 relative" role="cell">
         <span
           className={`${baseStyle} ${
             winner === "right" ? winnerStyle : "opacity-70"

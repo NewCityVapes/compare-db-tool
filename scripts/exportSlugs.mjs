@@ -1,12 +1,15 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// ... rest of your code
 let allSlugs = [];
 let from = 0;
 let to = 999;

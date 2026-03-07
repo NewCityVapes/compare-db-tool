@@ -1,17 +1,3 @@
-// src/app/compare/[slug]/page.tsx
-// ============================================================
-// REPLACES: page.tsx + metadata.tsx (metadata was not working!)
-//
-// KEY CHANGES:
-// 1. generateMetadata is now exported FROM THIS FILE (Next.js requirement)
-// 2. Products are fetched SERVER-SIDE (Google can see comparison data)
-// 3. JSON-LD schema for Product, FAQ, Breadcrumb
-// 4. FAQ section rendered in HTML
-// 5. Semantic H1 is unique per page (not generic)
-// 6. Canonical URL is unique per page
-// 7. Server-rendered comparison table (SEO) + client interactivity
-// ============================================================
-
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { toSlug } from "../../../../lib/utils";
@@ -33,6 +19,7 @@ import {
 import ClientOnlyRender from "./ClientOnlyRender";
 
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,17 +61,22 @@ async function fetchAllProductsForVendor(
   return data as Product[];
 }
 
-// ============================================================
-// generateMetadata — THIS IS THE FIX
-// Your metadata.tsx file was never being read by Next.js.
-// Next.js App Router ONLY reads generateMetadata from page.tsx or layout.tsx.
-// ============================================================
-export async function generateMetadata({
-  params,
-}: {
+// ─── HELPERS ────────────────────────────────────────────────
+/** Truncate to a max length, breaking at the last space before the limit */
+function truncate(str: string, max: number): string {
+  if (str.length <= max) return str;
+  const trimmed = str.slice(0, max - 1);
+  const lastSpace = trimmed.lastIndexOf(" ");
+  return (lastSpace > 0 ? trimmed.slice(0, lastSpace) : trimmed) + "…";
+}
+
+// ─── generateMetadata ───────────────────────────────────────
+// ✅ FIX: Titles capped at 60 chars, descriptions at 155 chars
+// ✅ FIX: Full Open Graph tags including og:image on every page
+export async function generateMetadata(context: {
   params: Promise<{ slug?: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = await context.params;
 
   if (!slug || !slug.includes("-vs-")) {
     return {
@@ -98,23 +90,18 @@ export async function generateMetadata({
   }
 
   const [raw1, raw2] = slug.split("-vs-");
-  const vendor1 = formatVendorName(raw1);
-  const vendor2 = formatVendorName(raw2);
+  const vendor1Name = formatVendorName(decodeURIComponent(raw1));
+  const vendor2Name = formatVendorName(decodeURIComponent(raw2));
 
-  // Fetch products to determine winner for meta description
-  const [p1, p2] = await Promise.all([
-    fetchProductForVendor(raw1),
-    fetchProductForVendor(raw2),
-  ]);
+  // ✅ FIX: Truncate title to 60 characters max
+  const fullTitle = buildPageTitle(vendor1Name, vendor2Name);
+  const title = truncate(fullTitle, 60);
 
-  const result = compareProducts(p1, p2, vendor1, vendor2);
-  const title = buildPageTitle(vendor1, vendor2);
-  const description = buildMetaDescription(
-    vendor1,
-    vendor2,
-    result.winner !== "tie" ? result.winnerName : undefined,
-  );
-  const canonicalUrl = `https://compare.newcityvapes.com/compare/${slug}`;
+  // ✅ FIX: Truncate description to 155 characters max
+  const fullDesc = buildMetaDescription(vendor1Name, vendor2Name);
+  const description = truncate(fullDesc, 155);
+
+  const pageUrl = `https://compare.newcityvapes.com/compare/${slug}`;
 
   return {
     title,
@@ -122,32 +109,29 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: canonicalUrl,
+      url: pageUrl,
       type: "website",
-      locale: "en_CA",
-      siteName: "New City Vapes",
-      images: p1?.imageUrl
-        ? [{ url: p1.imageUrl, alt: `${vendor1} vs ${vendor2}` }]
-        : undefined,
+      images: [
+        {
+          url: "https://compare.newcityvapes.com/logo.png",
+          width: 300,
+          height: 113,
+          alt: `${vendor1Name} vs ${vendor2Name} comparison`,
+        },
+      ],
     },
     twitter: {
       title,
       description,
-      card: "summary_large_image",
+      card: "summary",
     },
     alternates: {
-      canonical: canonicalUrl,
-    },
-    robots: {
-      index: true,
-      follow: true,
+      canonical: pageUrl,
     },
   };
 }
 
-// ============================================================
-// Page Component
-// ============================================================
+// ─── PAGE COMPONENT ─────────────────────────────────────────
 export default async function Page({
   params,
 }: {
@@ -162,34 +146,25 @@ export default async function Page({
   const vendor2Slug = toSlug(decodeURIComponent(v2));
   const combinedSlug = `${vendor1Slug}-vs-${vendor2Slug}`;
 
-  const vendor1Name = formatVendorName(v1);
-  const vendor2Name = formatVendorName(v2);
+  const vendor1Name = formatVendorName(decodeURIComponent(v1));
+  const vendor2Name = formatVendorName(decodeURIComponent(v2));
 
-  // ✅ Fetch everything server-side (visible to Google)
-  const [product1, product2, products1, products2, verdictData] =
-    await Promise.all([
-      fetchProductForVendor(v1),
-      fetchProductForVendor(v2),
-      fetchAllProductsForVendor(v1),
-      fetchAllProductsForVendor(v2),
-      supabase
-        .from("verdicts")
-        .select("content")
-        .eq("slug", combinedSlug)
-        .maybeSingle(),
-    ]);
+  // Fetch products server-side
+  const product1 = await fetchProductForVendor(vendor1Slug);
+  const product2 = await fetchProductForVendor(vendor2Slug);
+  const products1 = await fetchAllProductsForVendor(vendor1Slug);
+  const products2 = await fetchAllProductsForVendor(vendor2Slug);
 
-  const verdict = verdictData.data?.content || "";
-  const result = compareProducts(product1, product2, vendor1Name, vendor2Name);
-  const faqs = generateFAQs(
-    product1,
-    product2,
-    vendor1Name,
-    vendor2Name,
-    result,
-  );
+  // Comparison result & FAQs
+  const result =
+    product1 && product2
+      ? compareProducts(product1, product2, vendor1Name, vendor2Name)
+      : null;
+  const faqs =
+    product1 && product2 && result
+      ? generateFAQs(product1, product2, vendor1Name, vendor2Name, result)
+      : [];
 
-  // ─── Comparison attribute rows for server-rendered table ───
   const comparisonAttributes = [
     { label: "PUFF COUNT", key: "puffCount" },
     { label: "ML", key: "ml" },
@@ -200,9 +175,18 @@ export default async function Page({
     { label: "NUMBER OF FLAVOURS", key: "numberOfFlavours" },
   ];
 
+  // Verdict
+  const { data: verdictData } = await supabase
+    .from("verdicts")
+    .select("content")
+    .eq("slug", combinedSlug)
+    .maybeSingle();
+
+  const verdict = verdictData?.content || "";
+
   return (
     <>
-      {/* ✅ JSON-LD Structured Data (in HTML source for Google) */}
+      {/* ✅ JSON-LD structured data (invisible to users, visible to Google) */}
       {product1 && (
         <ProductJsonLd product={product1} vendorName={vendor1Name} />
       )}
@@ -216,20 +200,19 @@ export default async function Page({
         slug={combinedSlug}
       />
 
-      {/* ✅ Server-rendered SEO content (hidden visually, visible to Google) */}
-      {/* This section provides crawlable content even before JS loads */}
+      {/* ✅ Server-rendered SEO content (visible to Google) */}
       <div className="sr-only" aria-hidden="false">
         <h1>
           {vendor1Name} vs {vendor2Name} — Disposable Vape Comparison Canada
         </h1>
         <p>
           Compare {vendor1Name} and {vendor2Name} disposable vapes side-by-side
-          across {comparisonAttributes.length} key attributes including puff
-          count, ML capacity, battery life, price, and value metrics.
-          {result.winner !== "tie" && (
+          across key specifications including puff count, ML capacity, battery,
+          price, and value metrics.
+          {result && result.winner !== "tie" && (
             <>
               {" "}
-              The winner is {result.winnerName} with a score of{" "}
+              {result.winner} wins with a score of{" "}
               {Math.max(result.leftScore, result.rightScore)} to{" "}
               {Math.min(result.leftScore, result.rightScore)}.
             </>
@@ -262,14 +245,17 @@ export default async function Page({
         </table>
       </div>
 
-      {/* ✅ Visible breadcrumb navigation */}
+      {/* ✅ Breadcrumb navigation */}
       <nav
         aria-label="Breadcrumb"
         className="text-sm text-gray-500 text-center pt-4 pb-2"
       >
-        <ol className="flex justify-center gap-1 flex-wrap">
+        <ol className="inline-flex items-center gap-1 flex-wrap">
           <li>
-            <a href="https://newcityvapes.com" className="hover:underline">
+            <a
+              href="https://newcityvapes.com/"
+              className="text-[#CB9D64] hover:underline"
+            >
               Home
             </a>
             <span className="mx-1">/</span>
@@ -277,20 +263,19 @@ export default async function Page({
           <li>
             <a
               href="https://compare.newcityvapes.com"
-              className="hover:underline"
+              className="text-[#CB9D64] hover:underline"
             >
               Comparisons
             </a>
             <span className="mx-1">/</span>
           </li>
-          <li className="text-gray-800 font-medium">
+          <li className="text-gray-600 font-medium">
             {vendor1Name} vs {vendor2Name}
           </li>
         </ol>
       </nav>
 
-      {/* ✅ Interactive comparison UI (your existing component) */}
-      {/* Now receives server-fetched data as initial props */}
+      {/* ✅ Interactive comparison component */}
       <ClientOnlyRender
         vendor1={decodeURIComponent(v1)}
         vendor2={decodeURIComponent(v2)}
@@ -298,7 +283,7 @@ export default async function Page({
         initialProducts2={products2}
       />
 
-      {/* ✅ Verdict (server-rendered, same as before) */}
+      {/* ✅ Verdict (rendered server-side) */}
       {verdict && (
         <div
           className="rich-verdict max-w-4xl mx-auto text-lg leading-relaxed space-y-6 mt-20"
@@ -306,22 +291,22 @@ export default async function Page({
         />
       )}
 
-      {/* ✅ NEW: FAQ Section (server-rendered HTML + matches FAQPage schema) */}
+      {/* ✅ FAQ section (visible HTML + FAQ schema) */}
       {faqs.length > 0 && (
-        <section className="max-w-3xl mx-auto mt-16 mb-16 px-4 text-left">
+        <section className="max-w-4xl mx-auto mt-16 px-4 text-left">
           <h2
             className="text-2xl font-bold text-center mb-8"
             style={{ color: "#2E323B" }}
           >
-            Frequently Asked Questions — {vendor1Name} vs {vendor2Name}
+            Frequently Asked Questions: {vendor1Name} vs {vendor2Name}
           </h2>
           <div className="space-y-6">
             {faqs.map((faq, idx) => (
               <article key={idx} className="border-b border-gray-200 pb-4">
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900">
                   {faq.question}
                 </h3>
-                <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
+                <p className="text-gray-600 mt-2">{faq.answer}</p>
               </article>
             ))}
           </div>

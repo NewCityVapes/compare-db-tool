@@ -1,72 +1,73 @@
-// src/app/layout.tsx
-// ============================================================
-// CHANGES FROM YOUR ORIGINAL:
-// 1. Removed hardcoded canonical (now set per-page via generateMetadata)
-// 2. Added Organization JSON-LD schema
-// 3. Cleaned up: removed unused Geist font imports
-// 4. Added global metadata defaults with template
-// 5. Everything else (GA, announcement bars, header, nav) UNCHANGED
-// ============================================================
-
 import type { Metadata } from "next";
-import "./globals.css";
+import { Geist, Geist_Mono } from "next/font/google";
+import "../app/globals.css";
 import Script from "next/script";
 import "../styles/nextjs-header.css";
 import Image from "next/image";
 import { Roboto } from "next/font/google";
-import { OrganizationJsonLd } from "../components/SEO/JsonLd";
 
 const roboto = Roboto({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "700"],
   display: "swap",
-  variable: "--font-roboto",
 });
 
-// ✅ Global metadata defaults — individual pages override via generateMetadata
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// ✅ FIX: Use template-based title so child pages OVERRIDE instead of DUPLICATE
+// ✅ FIX: Removed hardcoded description — each page sets its own
 export const metadata: Metadata = {
-  metadataBase: new URL("https://compare.newcityvapes.com"),
   title: {
-    default: "Disposable Vape Comparisons | New City Vapes",
-    template: "%s", // Pages provide full titles
+    template: "%s",
+    default: "Disposable Vape Comparison Tool | New City Vapes",
   },
   description:
-    "Compare disposable vapes side-by-side. Find the best disposable vape in Canada by puff count, price, battery life, ML capacity, and more.",
+    "Compare disposable vapes side-by-side. Find the best puff count, price, battery life and more across top Canadian brands.",
   icons: {
     icon: "/favicon.ico",
   },
+  // ✅ FIX: robots belongs in metadata API, NOT as a manual <meta> tag
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
   },
+  // ✅ FIX: OG defaults so no page is ever missing Open Graph tags
   openGraph: {
+    siteName: "New City Vapes Compare",
     type: "website",
     locale: "en_CA",
-    siteName: "New City Vapes",
+    images: [
+      {
+        url: "https://compare.newcityvapes.com/logo.png",
+        width: 300,
+        height: 113,
+        alt: "New City Vapes",
+      },
+    ],
   },
-  // ✅ REMOVED: hardcoded canonical — now set per-page
+  twitter: {
+    card: "summary",
+  },
 };
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={roboto.variable}>
+    <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="shortcut icon" href="/favicon.ico" />
-
-        {/* ✅ Organization schema — site-wide */}
-        <OrganizationJsonLd />
-
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=G-6WTQEQ7ERQ`}
           strategy="afterInteractive"
@@ -80,7 +81,15 @@ export default async function RootLayout({
   `}
         </Script>
 
-        {/* ✅ Shopify CSS */}
+        {/* ❌ REMOVED: <link rel="canonical" href="https://compare.newcityvapes.com" />
+            This was stamping the SAME canonical on ALL 2,823 pages.
+            Each page now sets its own canonical via metadata.alternates.canonical */}
+
+        {/* ❌ REMOVED: <meta name="robots" content="index, follow" />
+            Moved to metadata export above to prevent duplicate tags */}
+
+        {/* ❌ REMOVED: Shopify global.js — this was injecting duplicate title/meta tags
+            and slowing down pages. The CSS is kept for styling. */}
         <link
           rel="stylesheet"
           href="https://newcityvapes.com/cdn/shop/t/1/assets/base.css"
@@ -94,11 +103,13 @@ export default async function RootLayout({
               let lastScrollTop = 0;
               window.addEventListener("scroll", function () {
                 let scrollTop = window.scrollY || document.documentElement.scrollTop;
+
                 if (scrollTop > 100) {
                   document.body.classList.add("scrolled");
                 } else {
                   document.body.classList.remove("scrolled");
                 }
+
                 lastScrollTop = scrollTop;
               });
             });
@@ -106,8 +117,10 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${roboto.className} antialiased`}>
-        {/* ✅ Announcement Wrapper */}
+      <body
+        className={`${roboto.className} ${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {/* ✅ Announcement Wrapper - Groups Both Bars */}
         <div className="announcement-wrapper">
           <div className="announcement-bar warning-bar">
             WARNING: VAPING PRODUCTS CONTAIN NICOTINE, A HIGHLY ADDICTIVE
@@ -122,7 +135,7 @@ export default async function RootLayout({
         <div id="shopify-header">
           <Image
             src="/logo.png"
-            alt="New City Vapes — Canadian Vape Store"
+            alt="New City Vape Store"
             width={300}
             height={113}
             className="header__heading-logo"
@@ -130,7 +143,8 @@ export default async function RootLayout({
             unoptimized
           />
 
-          <nav className="home-nav" aria-label="Main navigation">
+          {/* ✅ Home Link & Navigation — added COMPARE link for internal linking */}
+          <nav className="home-nav">
             <a href="https://newcityvapes.com/" className="home-link">
               HOME
             </a>
@@ -141,6 +155,7 @@ export default async function RootLayout({
               POPULAR
             </a>
             <a href="https://newcityvapes.com/collections/hardware">HARDWARE</a>
+            <a href="https://compare.newcityvapes.com/browse">COMPARE</a>
             <a href="https://newcityvapes.goaffpro.com/">AFFILIATES</a>
           </nav>
         </div>

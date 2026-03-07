@@ -1,14 +1,7 @@
-// src/app/sitemap.xml/route.ts
-// ============================================================
-// CHANGES: Added lastmod, changefreq, priority for better crawling
-// Added homepage and /compare hub page
-// ============================================================
-
 import { supabase } from "../../../lib/supabase.mjs";
 
 export async function GET() {
   const allSlugs: string[] = [];
-  const now = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
   let from = 0;
   let to = 999;
@@ -37,33 +30,38 @@ export async function GET() {
     }
   }
 
-  const comparisonUrls = allSlugs
-    .map(
-      (slug) =>
-        `<url>
-      <loc>https://compare.newcityvapes.com/compare/${slug}</loc>
-      <lastmod>${now}</lastmod>
-      <changefreq>monthly</changefreq>
-      <priority>0.7</priority>
+  const today = new Date().toISOString().split("T")[0];
+
+  // ✅ FIX: Include browse page so it's discoverable
+  const staticPages = [
+    `<url>
+      <loc>https://compare.newcityvapes.com/browse</loc>
+      <lastmod>${today}</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
     </url>`,
-    )
-    .join("\n    ");
+  ];
+
+  const comparisonPages = allSlugs.map(
+    (slug) =>
+      `<url>
+      <loc>https://compare.newcityvapes.com/compare/${slug}</loc>
+      <lastmod>${today}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>`,
+  );
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-      <loc>https://compare.newcityvapes.com</loc>
-      <lastmod>${now}</lastmod>
-      <changefreq>weekly</changefreq>
-      <priority>1.0</priority>
-    </url>
-    ${comparisonUrls}
+  ${staticPages.join("\n  ")}
+  ${comparisonPages.join("\n  ")}
 </urlset>`;
 
   return new Response(xml, {
     headers: {
       "Content-Type": "application/xml",
-      "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=43200",
+      "Cache-Control": "public, max-age=3600, s-maxage=3600",
     },
   });
 }

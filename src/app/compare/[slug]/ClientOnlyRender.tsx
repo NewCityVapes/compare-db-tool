@@ -139,11 +139,11 @@ export default function ClientOnlyRender({
   const [hasUserChangedVendors, setHasUserChangedVendors] = useState(false);
 
   useEffect(() => {
-    if (hasUserChangedVendors && selectedVendor1 && selectedVendor2) {
+    if (selectedVendor1 && selectedVendor2) {
       fetchProducts(selectedVendor1, setProducts1);
       fetchProducts(selectedVendor2, setProducts2);
     }
-  }, [selectedVendor1, selectedVendor2, fetchProducts, hasUserChangedVendors]);
+  }, [selectedVendor1, selectedVendor2, fetchProducts]);
 
   useEffect(() => {
     async function fetchVerdict() {

@@ -15,7 +15,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
     "plugins": [
       {
@@ -36,7 +36,8 @@
     "lib/supabase.mjs",
     "scripts/syncShopify.mjs",
     "lib/shopify.mjs",
-    "src/app/compare/[slug]/page.jsx"
+    "src/app/compare/[slug]/page.jsx",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

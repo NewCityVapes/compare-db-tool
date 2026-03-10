@@ -17,6 +17,7 @@ import {
   BreadcrumbJsonLd,
 } from "../../../components/SEO/JsonLd";
 import ClientOnlyRender from "./ClientOnlyRender";
+import RelatedComparisons from "./RelatedComparisons";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -312,6 +313,12 @@ export default async function Page({
           </div>
         </section>
       )}
+      {/* ✅ Related comparisons — internal links to fix orphan pages */}
+      <RelatedComparisons
+        vendor1Slug={vendor1Slug}
+        vendor2Slug={vendor2Slug}
+        currentSlug={combinedSlug}
+      />
     </>
   );
 }

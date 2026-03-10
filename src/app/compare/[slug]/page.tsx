@@ -71,9 +71,18 @@ function truncate(str: string, max: number): string {
   return (lastSpace > 0 ? trimmed.slice(0, lastSpace) : trimmed) + "…";
 }
 
+/** Convert "left"/"right" winner to actual vendor name */
+function getWinnerName(
+  winner: string,
+  vendor1Name: string,
+  vendor2Name: string,
+): string {
+  if (winner === "left") return vendor1Name;
+  if (winner === "right") return vendor2Name;
+  return winner; // fallback if it's already a name
+}
+
 // ─── generateMetadata ───────────────────────────────────────
-// ✅ FIX: Titles capped at 60 chars, descriptions at 155 chars
-// ✅ FIX: Full Open Graph tags including og:image on every page
 export async function generateMetadata(context: {
   params: Promise<{ slug?: string }>;
 }): Promise<Metadata> {
@@ -94,11 +103,9 @@ export async function generateMetadata(context: {
   const vendor1Name = formatVendorName(decodeURIComponent(raw1));
   const vendor2Name = formatVendorName(decodeURIComponent(raw2));
 
-  // ✅ FIX: Truncate title to 60 characters max
   const fullTitle = buildPageTitle(vendor1Name, vendor2Name);
   const title = truncate(fullTitle, 60);
 
-  // ✅ FIX: Truncate description to 155 characters max
   const fullDesc = buildMetaDescription(vendor1Name, vendor2Name);
   const description = truncate(fullDesc, 155);
 
@@ -185,6 +192,19 @@ export default async function Page({
 
   const verdict = verdictData?.content || "";
 
+  // ✅ FIX: Resolve "left"/"right" to actual vendor name
+  const winnerDisplay =
+    result && result.winner !== "tie"
+      ? getWinnerName(result.winner, vendor1Name, vendor2Name)
+      : null;
+
+  // ✅ NEW: Last updated date for freshness signal
+  const today = new Date().toLocaleDateString("en-CA", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <>
       {/* ✅ JSON-LD structured data (invisible to users, visible to Google) */}
@@ -210,12 +230,13 @@ export default async function Page({
           Compare {vendor1Name} and {vendor2Name} disposable vapes side-by-side
           across key specifications including puff count, ML capacity, battery,
           price, and value metrics.
-          {result && result.winner !== "tie" && (
+          {/* ✅ FIX: Shows actual vendor name instead of "left"/"right" */}
+          {winnerDisplay && (
             <>
               {" "}
-              {result.winner} wins with a score of{" "}
-              {Math.max(result.leftScore, result.rightScore)} to{" "}
-              {Math.min(result.leftScore, result.rightScore)}.
+              {winnerDisplay} wins with a score of{" "}
+              {Math.max(result!.leftScore, result!.rightScore)} to{" "}
+              {Math.min(result!.leftScore, result!.rightScore)}.
             </>
           )}
         </p>
@@ -276,6 +297,11 @@ export default async function Page({
         </ol>
       </nav>
 
+      {/* ✅ NEW: Last updated date — freshness signal for Google */}
+      <p className="text-center text-xs text-gray-400 mb-4">
+        Data last updated: {today}
+      </p>
+
       {/* ✅ Interactive comparison component */}
       <ClientOnlyRender
         vendor1={decodeURIComponent(v1)}
@@ -313,6 +339,7 @@ export default async function Page({
           </div>
         </section>
       )}
+
       {/* ✅ Related comparisons — internal links to fix orphan pages */}
       <RelatedComparisons
         vendor1Slug={vendor1Slug}

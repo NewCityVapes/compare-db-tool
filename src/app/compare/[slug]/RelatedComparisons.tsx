@@ -1,8 +1,8 @@
 // src/app/compare/[slug]/RelatedComparisons.tsx
 // ============================================================
 // Server component that renders internal links to related comparisons.
-// This fixes the "Orphan page" issue by creating a web of internal links
-// between comparison pages that share the same vendor.
+// Fixes "Orphan page" issue by creating internal links between pages.
+// ✅ Deduplicates apostrophe variants (Drip'N vs Dripn, etc.)
 // ============================================================
 
 import { createClient } from "@supabase/supabase-js";
@@ -14,6 +14,18 @@ const supabase = createClient(
 
 function formatVendorFromSlug(slug: string): string {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Normalize a slug for deduplication purposes.
+ * Strips apostrophes and special characters so "drip'n-5000" and "dripn-5000"
+ * are treated as the same entry.
+ */
+function normalizeSlug(slug: string): string {
+  return slug
+    .toLowerCase()
+    .replace(/[''`]/g, "") // remove apostrophes and backticks
+    .replace(/[^a-z0-9-]/g, ""); // remove any other special chars
 }
 
 export default async function RelatedComparisons({
@@ -35,30 +47,45 @@ export default async function RelatedComparisons({
 
   if (!allSlugs || allSlugs.length === 0) return null;
 
+  // Deduplicate: if two slugs normalize to the same thing, keep only one
+  const seen = new Set<string>();
+  const dedupedSlugs: { slug: string }[] = [];
+
+  for (const item of allSlugs) {
+    const normalized = normalizeSlug(item.slug);
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    dedupedSlugs.push(item);
+  }
+
   // Split into two groups: comparisons with vendor1 and comparisons with vendor2
   const vendor1Related: { slug: string; label: string }[] = [];
   const vendor2Related: { slug: string; label: string }[] = [];
 
-  for (const item of allSlugs) {
+  // Also normalize the current vendor slugs for matching
+  const normalizedV1 = normalizeSlug(vendor1Slug);
+  const normalizedV2 = normalizeSlug(vendor2Slug);
+
+  for (const item of dedupedSlugs) {
     const parts = item.slug.split("-vs-");
     if (parts.length !== 2) continue;
 
     const label = `${formatVendorFromSlug(parts[0])} vs ${formatVendorFromSlug(parts[1])}`;
+    const normalizedItemSlug = normalizeSlug(item.slug);
 
-    if (item.slug.includes(vendor1Slug)) {
+    // Check which vendor this comparison relates to
+    if (normalizedItemSlug.includes(normalizedV1)) {
       vendor1Related.push({ slug: item.slug, label });
-    } else if (item.slug.includes(vendor2Slug)) {
+    } else if (normalizedItemSlug.includes(normalizedV2)) {
       vendor2Related.push({ slug: item.slug, label });
     }
   }
 
-  // Take up to 5 from each group for a total of ~10 links
-  const related = [
-    ...vendor1Related.slice(0, 5),
-    ...vendor2Related.slice(0, 5),
-  ];
+  // Take up to 5 from each group
+  const v1Items = vendor1Related.slice(0, 5);
+  const v2Items = vendor2Related.slice(0, 5);
 
-  if (related.length === 0) return null;
+  if (v1Items.length === 0 && v2Items.length === 0) return null;
 
   const vendor1Name = formatVendorFromSlug(vendor1Slug);
   const vendor2Name = formatVendorFromSlug(vendor2Slug);
@@ -73,7 +100,7 @@ export default async function RelatedComparisons({
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
         {/* Vendor 1 related */}
-        {vendor1Related.length > 0 && (
+        {v1Items.length > 0 && (
           <div>
             <h3
               className="text-lg font-semibold mb-3"
@@ -82,7 +109,7 @@ export default async function RelatedComparisons({
               More {vendor1Name} Comparisons
             </h3>
             <ul className="space-y-1.5">
-              {vendor1Related.slice(0, 5).map((item) => (
+              {v1Items.map((item) => (
                 <li key={item.slug}>
                   <a
                     href={`/compare/${item.slug}`}
@@ -97,7 +124,7 @@ export default async function RelatedComparisons({
         )}
 
         {/* Vendor 2 related */}
-        {vendor2Related.length > 0 && (
+        {v2Items.length > 0 && (
           <div>
             <h3
               className="text-lg font-semibold mb-3"
@@ -106,7 +133,7 @@ export default async function RelatedComparisons({
               More {vendor2Name} Comparisons
             </h3>
             <ul className="space-y-1.5">
-              {vendor2Related.slice(0, 5).map((item) => (
+              {v2Items.map((item) => (
                 <li key={item.slug}>
                   <a
                     href={`/compare/${item.slug}`}
@@ -127,9 +154,7 @@ export default async function RelatedComparisons({
           href="/browse"
           className="text-[#CB9D64] font-semibold hover:underline"
         >
-          Browse all{" "}
-          {vendor1Related.length + vendor2Related.length > 10 ? "2,800+" : ""}{" "}
-          comparisons →
+          Browse all comparisons →
         </a>
       </div>
     </section>

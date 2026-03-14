@@ -555,3 +555,24 @@ html, body {
   .rich-verdict p { font-size: 0.9rem; line-height: 1.5rem; }
   .rich-verdict li { font-size: 0.9rem; }
 }
+
+/* ✅ Buy button */
+.buy-button-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background-color: #CB9D64;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s ease;
+  margin-top: 8px;
+}
+
+.buy-button-gold:hover {
+  background-color: #b8894f;
+}

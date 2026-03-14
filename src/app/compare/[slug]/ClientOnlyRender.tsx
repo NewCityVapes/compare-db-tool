@@ -1,13 +1,4 @@
 // src/app/compare/[slug]/ClientOnlyRender.tsx
-// ============================================================
-// UPDATED: Now receives initialProducts from server component
-//
-// CHANGES:
-// 1. Accepts initialProducts1 / initialProducts2 props
-// 2. Renders immediately with server data (no "Loading..." flash)
-// 3. Still re-fetches on dropdown change (interactive)
-// 4. All your existing UI logic preserved exactly
-// ============================================================
 
 "use client";
 import { useCallback, useState, useEffect } from "react";
@@ -59,7 +50,6 @@ export default function ClientOnlyRender({
   const [selectedVendor2, setSelectedVendor2] = useState("");
   const [vendors, setVendors] = useState<string[]>([]);
 
-  // ✅ CHANGED: Initialize with server-fetched data instead of empty arrays
   const [products1, setProducts1] = useState<Product[]>(initialProducts1);
   const [products2, setProducts2] = useState<Product[]>(initialProducts2);
 
@@ -78,7 +68,6 @@ export default function ClientOnlyRender({
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -134,8 +123,6 @@ export default function ClientOnlyRender({
     [],
   );
 
-  // ✅ CHANGED: Only re-fetch if vendors change from the dropdown
-  // Skip initial fetch since we already have server data
   const [hasUserChangedVendors, setHasUserChangedVendors] = useState(false);
 
   useEffect(() => {
@@ -157,7 +144,6 @@ export default function ClientOnlyRender({
         .eq("slug", slug)
         .maybeSingle();
 
-      // Verdict is already rendered server-side, this is just for dropdown changes
       console.log(
         "🧪 Verdict fetch for:",
         slug,
@@ -203,7 +189,6 @@ export default function ClientOnlyRender({
 
   return (
     <div className="comparison-container">
-      {/* ✅ SEO: H1 is now unique per comparison page */}
       <h1 className="page-title">
         {formatSlug(rawVendor1)} vs {formatSlug(rawVendor2)}
       </h1>
@@ -247,14 +232,15 @@ export default function ClientOnlyRender({
             </div>
             {item.products.length > 0 && (
               <a
-                href={`https://newcityvapes.com/collections/${
-                  item.products[0].collectionHandle || toSlug(item.vendor)
-                }`}
+                href={
+                  "https://newcityvapes.com/collections/" +
+                  (item.products[0].collectionHandle || toSlug(item.vendor))
+                }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="buy-link"
+                className="buy-button-gold"
               >
-                BUY • ${item.products[0].price.toFixed(2)}
+                BUY NOW AT NCV — ${item.products[0].price.toFixed(2)} CAD
               </a>
             )}
           </div>
@@ -264,7 +250,6 @@ export default function ClientOnlyRender({
         </div>
       </div>
 
-      {/* ✅ SEO: This heading is now an H2 (H1 is above) */}
       <h2 className="comparison-header">
         {formatSlug(selectedVendor1 ? toSlug(selectedVendor1) : rawVendor1)} vs{" "}
         {formatSlug(selectedVendor2 ? toSlug(selectedVendor2) : rawVendor2)}
@@ -357,14 +342,12 @@ export default function ClientOnlyRender({
             </div>
           </div>
         ))}
-
-       
       </div>
     </div>
   );
 }
 
-// ─── WinnerCell (unchanged from your original) ───
+// ─── WinnerCell ───
 function WinnerCell({
   val1,
   val2,

@@ -358,28 +358,7 @@ export default function ClientOnlyRender({
           </div>
         ))}
 
-        {/* Verdict banner */}
-        <div className="flex flex-col items-center justify-center mt-10 py-10 px-6 rounded-xl bg-[#2E323B] shadow-xl border border-[#CB9D64] animate-pulse-slow text-center font-roboto text-[#E5E5E5]">
-          <Image
-            src="/NCV_Icon_Beige.png"
-            alt="New City Vapes Logo"
-            width={64}
-            height={64}
-            className="mb-4"
-          />
-          <h2 className="text-4xl md:text-5xl font-extrabold text-[#CB9D64] tracking-wide uppercase">
-            New City Vapes Verdict
-          </h2>
-          <p className="mt-4 text-2xl md:text-3xl font-semibold">
-            The Winner is{" "}
-            <span className="text-[#CB9D64] font-extrabold">
-              {winCounts.left > winCounts.right
-                ? selectedVendor1 || formatSlug(rawVendor1)
-                : selectedVendor2 || formatSlug(rawVendor2)}{" "}
-              🏆
-            </span>
-          </p>
-        </div>
+       
       </div>
     </div>
   );

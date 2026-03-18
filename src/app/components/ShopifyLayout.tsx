@@ -8,13 +8,17 @@ export default function ShopifyLayout({ type }: { type: "header" | "footer" }) {
     async function fetchShopifyLayout() {
       try {
         const res = await fetch(
-          type === "header" ? "/api/shopify-header" : "/api/shopify-footer"
+          type === "header" ? "/api/shopify-header" : "/api/shopify-footer",
         );
         if (!res.ok) throw new Error(`Failed to fetch Shopify ${type}`);
         const data = await res.json();
 
-        // Ensure HTML is properly formatted
-        setHtml(data.html.trim());
+        // ✅ Strip any <title> tags from Shopify HTML before injecting
+        const cleanedHtml = data.html
+          .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, "")
+          .trim();
+
+        setHtml(cleanedHtml);
       } catch (error) {
         console.error(`Error fetching Shopify ${type}:`, error);
       }

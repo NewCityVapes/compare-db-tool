@@ -1,4 +1,6 @@
 // src/app/compare/[slug]/ClientOnlyRender.tsx
+// KEY CHANGE: Only renders the full interactive table AFTER the user changes vendors.
+// Before that, only the vendor dropdowns are shown (the SSR table in page.tsx handles display).
 
 "use client";
 import { useCallback, useState, useEffect } from "react";
@@ -52,6 +54,9 @@ export default function ClientOnlyRender({
 
   const [products1, setProducts1] = useState<Product[]>(initialProducts1);
   const [products2, setProducts2] = useState<Product[]>(initialProducts2);
+
+  // ✅ KEY: track whether user has changed vendors
+  const [hasUserChangedVendors, setHasUserChangedVendors] = useState(false);
 
   const [winCounts, setWinCounts] = useState({ left: 0, right: 0 });
 
@@ -123,34 +128,29 @@ export default function ClientOnlyRender({
     [],
   );
 
-  const [hasUserChangedVendors, setHasUserChangedVendors] = useState(false);
-
+  // ✅ Only re-fetch products when USER changes vendors, not on initial load
   useEffect(() => {
-    if (selectedVendor1 && selectedVendor2) {
+    if (hasUserChangedVendors && selectedVendor1 && selectedVendor2) {
       fetchProducts(selectedVendor1, setProducts1);
       fetchProducts(selectedVendor2, setProducts2);
     }
-  }, [selectedVendor1, selectedVendor2, fetchProducts]);
+  }, [selectedVendor1, selectedVendor2, fetchProducts, hasUserChangedVendors]);
 
   useEffect(() => {
     async function fetchVerdict() {
       if (!selectedVendor1 || !selectedVendor2) return;
-
       const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
-
       const { data } = await supabase
         .from("verdicts")
         .select("content")
         .eq("slug", slug)
         .maybeSingle();
-
       console.log(
         "🧪 Verdict fetch for:",
         slug,
         data?.content ? "found" : "not found",
       );
     }
-
     if (hasUserChangedVendors) {
       fetchVerdict();
     }
@@ -187,6 +187,45 @@ export default function ClientOnlyRender({
     return value.toString();
   }
 
+  // ✅ BEFORE user changes vendors: only show the dropdown selectors
+  // The SSR table in page.tsx handles the initial display
+  if (!hasUserChangedVendors) {
+    return (
+      <div className="comparison-container mt-8">
+        <p className="text-center text-sm text-gray-500 mb-4">
+          Change either brand below to compare a different pair:
+        </p>
+        <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
+          {[
+            { vendor: selectedVendor1, index: 0 },
+            { vendor: selectedVendor2, index: 1 },
+          ].map(({ vendor, index }) => (
+            <div key={index} className="product-column">
+              <select
+                className="dropdown"
+                value={vendor}
+                aria-label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
+                onChange={(e) =>
+                  updateVendorSelection(
+                    index === 0 ? e.target.value : selectedVendor1,
+                    index === 1 ? e.target.value : selectedVendor2,
+                  )
+                }
+              >
+                {vendors.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ AFTER user changes vendors: show full interactive table
   return (
     <div className="comparison-container">
       <h1 className="page-title">
@@ -240,7 +279,7 @@ export default function ClientOnlyRender({
                 rel="noopener noreferrer"
                 className="buy-button-gold"
               >
-                BUY NOW AT NCV — ${item.products[0].price.toFixed(2)} CAD
+                BUY NOW — ${item.products[0].price.toFixed(2)} CAD
               </a>
             )}
           </div>
@@ -303,7 +342,6 @@ export default function ClientOnlyRender({
           </button>
         )}
 
-        {/* Text-only fields — no highlight */}
         {[
           { label: "FEATURES", key: "features" },
           { label: "EXPERT REVIEW", key: "expertReview" },
@@ -379,7 +417,6 @@ function WinnerCell({
     const timeout = setTimeout(
       () => {
         let newWinner: "left" | "right" | null = null;
-
         if (safe1 !== safe2) {
           if (
             (higherIsBetter && safe1 > safe2) ||
@@ -390,13 +427,11 @@ function WinnerCell({
             newWinner = "right";
           }
         }
-
         setWinner(newWinner);
         onWin(newWinner);
       },
       500 + index * 250,
     );
-
     return () => clearTimeout(timeout);
   }, [safe1, safe2, keyName, index, higherIsBetter, lowerIsBetter, onWin]);
 
@@ -408,11 +443,8 @@ function WinnerCell({
   function formatValue(value: number, key: string): string {
     const keysToFormatAsCurrency = ["price", "pricePerPuff", "pricePerML"];
     if (keysToFormatAsCurrency.includes(key)) {
-      if (key === "pricePerPuff") {
-        return `$${value.toFixed(4)}`;
-      } else {
-        return `$${value.toFixed(2)}`;
-      }
+      if (key === "pricePerPuff") return `$${value.toFixed(4)}`;
+      return `$${value.toFixed(2)}`;
     }
     return value.toString();
   }
@@ -421,18 +453,14 @@ function WinnerCell({
     <>
       <span className="text-center w-1/2 relative" role="cell">
         <span
-          className={`${baseStyle} ${
-            winner === "left" ? winnerStyle : "opacity-70"
-          }`}
+          className={`${baseStyle} ${winner === "left" ? winnerStyle : "opacity-70"}`}
         >
           {formatValue(safe1, keyName)} {winner === "left" && <Trophy />}
         </span>
       </span>
       <span className="text-center w-1/2 relative" role="cell">
         <span
-          className={`${baseStyle} ${
-            winner === "right" ? winnerStyle : "opacity-70"
-          }`}
+          className={`${baseStyle} ${winner === "right" ? winnerStyle : "opacity-70"}`}
         >
           {formatValue(safe2, keyName)} {winner === "right" && <Trophy />}
         </span>

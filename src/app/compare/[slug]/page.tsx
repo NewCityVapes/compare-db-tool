@@ -190,11 +190,6 @@ export default async function Page({
 
   const verdict = verdictData?.content || "";
 
-  const winnerDisplay =
-    result && result.winner !== "tie"
-      ? getWinnerName(result.winner, vendor1Name, vendor2Name)
-      : null;
-
   const today = new Date().toLocaleDateString("en-CA", {
     year: "numeric",
     month: "long",
@@ -217,52 +212,7 @@ export default async function Page({
         slug={combinedSlug}
       />
 
-      {/* ✅ Server-rendered SEO content (visible to Google, hidden from users) */}
-      <div className="sr-only" aria-hidden="false">
-        <h1>
-          {vendor1Name} vs {vendor2Name} — Disposable Vape Comparison Canada
-        </h1>
-        <p>
-          Compare {vendor1Name} and {vendor2Name} disposable vapes side-by-side
-          across key specifications including puff count, ML capacity, battery,
-          price, and value metrics.
-          {winnerDisplay && (
-            <>
-              {" "}
-              {winnerDisplay} wins with a score of{" "}
-              {Math.max(result!.leftScore, result!.rightScore)} to{" "}
-              {Math.min(result!.leftScore, result!.rightScore)}.
-            </>
-          )}
-        </p>
-        <table>
-          <caption>
-            {vendor1Name} vs {vendor2Name} Comparison
-          </caption>
-          <thead>
-            <tr>
-              <th>Attribute</th>
-              <th>{vendor1Name}</th>
-              <th>{vendor2Name}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {comparisonAttributes.map(({ label, key }) => (
-              <tr key={key}>
-                <td>{label}</td>
-                <td>
-                  {formatValue(product1?.[key as keyof Product] as number, key)}
-                </td>
-                <td>
-                  {formatValue(product2?.[key as keyof Product] as number, key)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ✅ Breadcrumb — Comparisons now links to /browse */}
+      {/* ✅ Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
         className="text-sm text-gray-500 text-center pt-4 pb-2"
@@ -297,7 +247,7 @@ export default async function Page({
         Data last updated: {today}
       </p>
 
-      {/* ✅ Interactive comparison — winner banner removed from ClientOnlyRender */}
+      {/* ✅ Interactive dropdowns — shown at the TOP, above the SSR table */}
       <ClientOnlyRender
         vendor1={decodeURIComponent(v1)}
         vendor2={decodeURIComponent(v2)}
@@ -305,7 +255,117 @@ export default async function Page({
         initialProducts2={products2}
       />
 
-      {/* ✅ Verdict — tighter formatting */}
+      {/* ✅ SERVER-RENDERED visible comparison table — Google can read this */}
+      {product1 && product2 && (
+        <div className="comparison-container" id="ssr-comparison">
+          <h1 className="page-title">
+            {vendor1Name} vs {vendor2Name}
+          </h1>
+          <h2 className="page-subtitle">Disposable Vape Comparison — Canada</h2>
+
+          {/* Product images + buy buttons */}
+          <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 relative text-center">
+            {[
+              { product: product1, vendorName: vendor1Name },
+              { product: product2, vendorName: vendor2Name },
+            ].map(({ product, vendorName: vName }, i) => (
+              <div key={i} className="product-column">
+                <p className="font-bold text-lg mb-2">{vName}</p>
+                {product.imageUrl && (
+                  <div className="product-image-container">
+                    <img
+                      src={product.imageUrl}
+                      alt={`${product.title} disposable vape`}
+                      width={350}
+                      height={350}
+                      className="product-image"
+                    />
+                  </div>
+                )}
+                <a
+                  href={`https://newcityvapes.com/collections/${
+                    (product as any).collectionHandle ?? toSlug(vName)
+                  }`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="buy-button-gold"
+                >
+                  BUY NOW — ${product.price.toFixed(2)} CAD
+                </a>
+              </div>
+            ))}
+          </div>
+
+          {/* Comparison table */}
+          <h2 className="comparison-header">
+            {vendor1Name} vs {vendor2Name}
+          </h2>
+          <div
+            className="comparison-table"
+            role="table"
+            aria-label="Vape comparison table"
+          >
+            {comparisonAttributes.map(({ label, key }) => {
+              const val1 =
+                (product1[key as keyof typeof product1] as number) ?? 0;
+              const val2 =
+                (product2[key as keyof typeof product2] as number) ?? 0;
+
+              const higherIsBetter = [
+                "puffCount",
+                "ml",
+                "battery",
+                "numberOfFlavours",
+              ].includes(key);
+              const lowerIsBetter = [
+                "price",
+                "pricePerPuff",
+                "pricePerML",
+              ].includes(key);
+
+              const left1wins =
+                val1 !== val2 &&
+                ((higherIsBetter && val1 > val2) ||
+                  (lowerIsBetter && val1 < val2));
+              const right2wins =
+                val1 !== val2 &&
+                ((higherIsBetter && val2 > val1) ||
+                  (lowerIsBetter && val2 < val1));
+
+              return (
+                <div key={key} className="attribute-row" role="row">
+                  <div className="attribute-header" role="columnheader">
+                    <h3 className="text-base font-semibold m-0 p-0">{label}</h3>
+                  </div>
+                  <div
+                    className="attribute-values flex flex-row gap-2 w-full justify-between"
+                    role="row"
+                  >
+                    <span
+                      className={`text-center w-1/2 block py-1 px-4 rounded-full ${
+                        left1wins ? "bg-green-200 font-semibold" : "opacity-70"
+                      }`}
+                      role="cell"
+                    >
+                      {formatValue(val1, key)} {left1wins && <span>🏆</span>}
+                    </span>
+                    <span
+                      className={`text-center w-1/2 block py-1 px-4 rounded-full ${
+                        right2wins ? "bg-green-200 font-semibold" : "opacity-70"
+                      }`}
+                      role="cell"
+                    >
+                      {formatValue(val2, key)} {right2wins && <span>🏆</span>}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Verdict */}
       {verdict && (
         <div
           className="rich-verdict max-w-4xl mx-auto leading-relaxed space-y-4 mt-16 px-4"
@@ -313,7 +373,7 @@ export default async function Page({
         />
       )}
 
-      {/* ✅ FAQ section — smaller, cleaner text */}
+      {/* ✅ FAQ section */}
       {faqs.length > 0 && (
         <section className="max-w-4xl mx-auto mt-12 px-4 text-left">
           <h2

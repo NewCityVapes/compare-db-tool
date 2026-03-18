@@ -16,6 +16,9 @@ export default function ShopifyLayout({ type }: { type: "header" | "footer" }) {
         // ✅ Strip any <title> tags from Shopify HTML before injecting
         const cleanedHtml = data.html
           .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, "")
+          .replace(/<meta[^>]*name=["']description["'][^>]*>/gi, "")
+          .replace(/<meta[^>]*name=["']robots["'][^>]*>/gi, "")
+          .replace(/<link[^>]*rel=["']canonical["'][^>]*>/gi, "")
           .trim();
 
         setHtml(cleanedHtml);

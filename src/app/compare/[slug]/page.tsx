@@ -80,6 +80,27 @@ function getWinnerName(
   return winner;
 }
 
+// ─── FIX: Sanitize verdict HTML to strip any <title>, <meta>, <head>, <link> tags ───
+// These tags in verdict content cause duplicate titles/descriptions in crawlers
+function sanitizeVerdictHtml(html: string): string {
+  if (!html) return "";
+  return (
+    html
+      // Remove <title>...</title> tags (case-insensitive, handles multiline)
+      .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, "")
+      // Remove <meta> tags (self-closing or not)
+      .replace(/<meta[^>]*\/?>/gi, "")
+      // Remove <head>...</head> blocks entirely
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+      // Remove stray <link> tags (canonical, stylesheet injections, etc.)
+      .replace(/<link[^>]*\/?>/gi, "")
+      // Remove <style> blocks that may have been injected
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+      // Remove <script> blocks
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+  );
+}
+
 // ─── generateMetadata ───────────────────────────────────────
 export async function generateMetadata(context: {
   params: Promise<{ slug?: string }>;
@@ -181,14 +202,15 @@ export default async function Page({
     { label: "NUMBER OF FLAVOURS", key: "numberOfFlavours" },
   ];
 
-  // Verdict
+  // Verdict — FIX: sanitize HTML to remove any injected <title>/<meta> tags
   const { data: verdictData } = await supabase
     .from("verdicts")
     .select("content")
     .eq("slug", combinedSlug)
     .maybeSingle();
 
-  const verdict = verdictData?.content || "";
+  const rawVerdict = verdictData?.content || "";
+  const verdict = sanitizeVerdictHtml(rawVerdict);
 
   const today = new Date().toLocaleDateString("en-CA", {
     year: "numeric",
@@ -296,10 +318,10 @@ export default async function Page({
             ))}
           </div>
 
-          {/* Comparison table */}
-          <h2 className="comparison-header">
+          {/* Comparison table — FIX: changed from <h2> to <h3> to avoid duplicate heading hierarchy */}
+          <h3 className="comparison-header">
             {vendor1Name} vs {vendor2Name}
-          </h2>
+          </h3>
           <div
             className="comparison-table"
             role="table"
@@ -365,7 +387,7 @@ export default async function Page({
         </div>
       )}
 
-      {/* ✅ Verdict */}
+      {/* ✅ Verdict — now sanitized to prevent duplicate title/meta injection */}
       {verdict && (
         <div
           className="rich-verdict max-w-4xl mx-auto leading-relaxed space-y-4 mt-16 px-4"

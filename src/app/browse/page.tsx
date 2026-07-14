@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
-import { createClient } from "@supabase/supabase-js";
+import { getAllComparisonSlugs } from "../../../lib/comparisons";
+import {
+  ItemListJsonLd,
+  BreadcrumbListJsonLd,
+} from "../../components/SEO/JsonLd";
 
-export const dynamic = "force-dynamic";
+// Statically generated, revalidated on-demand when a verdict is saved or a
+// Shopify sync runs (see lib/revalidate.ts) — this list changes only when
+// product/vendor data changes, not on every request.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Browse All Vape Comparisons | New City Vapes",
@@ -27,63 +34,69 @@ export const metadata: Metadata = {
   },
 };
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-interface VerdictRow {
-  slug: string;
+function formatVendorFromSlug(slug: string): string {
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default async function BrowsePage() {
-  // Fetch all slugs from verdicts table (paginated)
-  const allSlugs: string[] = [];
-  let from = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    const { data, error } = await supabase
-      .from("verdicts")
-      .select("slug")
-      .order("slug", { ascending: true })
-      .range(from, from + 999);
-
-    if (error || !data || data.length === 0) {
-      hasMore = false;
-    } else {
-      allSlugs.push(...(data as VerdictRow[]).map((d) => d.slug));
-      from += 1000;
-      if (data.length < 1000) hasMore = false;
-    }
-  }
+  const allSlugs = await getAllComparisonSlugs();
 
   // Group by first vendor for organized display
   const grouped: Record<string, { slug: string; label: string }[]> = {};
+  const labelsBySlug: Record<string, string> = {};
 
   for (const slug of allSlugs) {
     const parts = slug.split("-vs-");
     if (parts.length !== 2) continue;
 
-    const vendor1 = parts[0]
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-    const vendor2 = parts[1]
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const vendor1 = formatVendorFromSlug(parts[0]);
+    const vendor2 = formatVendorFromSlug(parts[1]);
+    const label = `${vendor1} vs ${vendor2}`;
+    labelsBySlug[slug] = label;
 
     const key = vendor1;
     if (!grouped[key]) grouped[key] = [];
-    grouped[key].push({
-      slug,
-      label: `${vendor1} vs ${vendor2}`,
-    });
+    grouped[key].push({ slug, label });
   }
 
   const sortedKeys = Object.keys(grouped).sort();
 
   return (
     <div className="comparison-container" style={{ padding: "20px 5%" }}>
+      <ItemListJsonLd
+        items={allSlugs.map((slug) => ({
+          url: `https://compare.newcityvapes.com/compare/${slug}`,
+          name: labelsBySlug[slug] ?? slug,
+        }))}
+      />
+      <BreadcrumbListJsonLd
+        items={[
+          { name: "Home", url: "https://newcityvapes.com" },
+          {
+            name: "Comparisons",
+            url: "https://compare.newcityvapes.com/browse",
+          },
+        ]}
+      />
+
+      <nav
+        aria-label="Breadcrumb"
+        className="text-sm text-gray-500 text-center pt-4 pb-2"
+      >
+        <ol className="inline-flex items-center gap-1 flex-wrap">
+          <li>
+            <a
+              href="https://newcityvapes.com/"
+              className="text-[#CB9D64] hover:underline"
+            >
+              Home
+            </a>
+            <span className="mx-1">/</span>
+          </li>
+          <li className="text-gray-600 font-medium">Comparisons</li>
+        </ol>
+      </nav>
+
       <h1 className="page-title">All Disposable Vape Comparisons</h1>
       <p
         className="page-subtitle"

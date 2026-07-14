@@ -3,19 +3,13 @@
 // comparison links. Works for ALL pages regardless of whether a verdict exists.
 
 import { createClient } from "@supabase/supabase-js";
+import { toSlug } from "../../../../lib/utils";
+import { canonicalizeSlug } from "../../../../lib/slug";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
-
-function toSlug(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[''`]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 function formatVendorFromSlug(slug: string): string {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -57,12 +51,12 @@ export default async function RelatedComparisons({
   });
 
   const v1Related = shuffled.slice(0, 5).map((v) => ({
-    slug: `${vendor1Slug}-vs-${v}`,
+    slug: canonicalizeSlug(vendor1Slug, v),
     label: `${formatVendorFromSlug(vendor1Slug)} vs ${formatVendorFromSlug(v)}`,
   }));
 
   const v2Related = shuffled.slice(5, 10).map((v) => ({
-    slug: `${vendor2Slug}-vs-${v}`,
+    slug: canonicalizeSlug(vendor2Slug, v),
     label: `${formatVendorFromSlug(vendor2Slug)} vs ${formatVendorFromSlug(v)}`,
   }));
 

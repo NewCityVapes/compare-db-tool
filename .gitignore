@@ -53,5 +53,8 @@ node_modules/
 
 
 # Prevent committing secrets
-*.json
-!public/*.json
+# (was a blanket `*.json` rule — that also silently matched package.json,
+# tsconfig.json, .eslintrc.json etc. It only "worked" because those files
+# were committed before the rule existed; any *new* JSON file would have
+# been silently un-committable.)
+scripts/credentials.json

@@ -29,7 +29,6 @@ export async function GET() {
       }
     }
 
-    console.log("🔥 Final Vendor Count (DISPOSABLES only):", allVendors.length);
     const uniqueVendors = [
       ...new Set(allVendors.map((item) => item.vendor?.trim())),
     ];

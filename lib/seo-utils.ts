@@ -128,6 +128,26 @@ export function buildMetaDescription(
   return `${base} Find the best disposable vape in Canada.`;
 }
 
+// ─── Sanitize verdict HTML injected via dangerouslySetInnerHTML ───
+// Strips <title>/<meta>/<head>/<link>/<style>/<script> (which previously
+// caused duplicate title/meta tags in crawlers), and downgrades any embedded
+// <h1> to <h2> — ~61% of the ~2,800 existing verdict rows embed their own
+// <h1>, which would otherwise create a second (and sometimes contradictory,
+// see the vendor-content-mismatch data quality issue) <h1> alongside the
+// page's own.
+export function sanitizeVerdictHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, "")
+    .replace(/<meta[^>]*\/?>/gi, "")
+    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+    .replace(/<link[^>]*\/?>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<h1(\s[^>]*)?>/gi, "<h2$1>")
+    .replace(/<\/h1>/gi, "</h2>");
+}
+
 // ─── Format values for display (matches your existing logic) ───
 export function formatValue(
   value: number | string | null | undefined,

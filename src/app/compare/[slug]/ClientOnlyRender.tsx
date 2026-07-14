@@ -7,7 +7,6 @@ import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toSlug } from "../../../../lib/utils";
-import { supabase } from "../../../../lib/supabase-browser";
 
 type Product = {
   id: string;
@@ -135,26 +134,6 @@ export default function ClientOnlyRender({
       fetchProducts(selectedVendor2, setProducts2);
     }
   }, [selectedVendor1, selectedVendor2, fetchProducts, hasUserChangedVendors]);
-
-  useEffect(() => {
-    async function fetchVerdict() {
-      if (!selectedVendor1 || !selectedVendor2) return;
-      const slug = `${toSlug(selectedVendor1)}-vs-${toSlug(selectedVendor2)}`;
-      const { data } = await supabase
-        .from("verdicts")
-        .select("content")
-        .eq("slug", slug)
-        .maybeSingle();
-      console.log(
-        "🧪 Verdict fetch for:",
-        slug,
-        data?.content ? "found" : "not found",
-      );
-    }
-    if (hasUserChangedVendors) {
-      fetchVerdict();
-    }
-  }, [selectedVendor1, selectedVendor2, hasUserChangedVendors]);
 
   if (redirecting) return null;
 

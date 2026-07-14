@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import Image from "next/image";
 import { toSlug } from "../../../../lib/utils";
-import { notFound } from "next/navigation";
+import { canonicalizeSlug, parseCompareSlug } from "../../../../lib/slug";
+import {
+  getAllComparisonSlugs,
+  verdictSlugCandidates,
+  pickVerdictContent,
+  productsForVendorSlug,
+} from "../../../../lib/comparisons";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   formatVendorName,
   buildPageTitle,
@@ -9,6 +17,7 @@ import {
   compareProducts,
   generateFAQs,
   formatValue,
+  sanitizeVerdictHtml,
 } from "../../../../lib/seo-utils";
 import type { Product } from "../../../../lib/seo-utils";
 import {
@@ -19,7 +28,11 @@ import {
 import ClientOnlyRender from "./ClientOnlyRender";
 import RelatedComparisons from "./RelatedComparisons";
 
-export const dynamic = "force-dynamic";
+// Pages are statically generated for every known vendor pair (see
+// generateStaticParams below) and revalidated on-demand when the Shopify
+// sync or a verdict save happens (see lib/revalidate.ts). The time-based
+// revalidate here is only a safety net in case an on-demand trigger is missed.
+export const revalidate = 3600;
 export const dynamicParams = true;
 
 const supabase = createClient(
@@ -27,36 +40,51 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-// ─── Helper: fetch first product for a vendor ───
-async function fetchProductForVendor(
-  vendorSlug: string,
-): Promise<Product | null> {
-  const formattedVendor = vendorSlug.trim().toLowerCase().replace(/-/g, " ");
-
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .ilike("vendor", formattedVendor)
-    .eq("productType", "DISPOSABLES")
-    .order("title", { ascending: true })
-    .limit(1);
-
-  if (error || !data || data.length === 0) return null;
-  return data[0] as Product;
+// ─── Pre-render every valid (both-vendors-have-products) canonical pair ───
+export async function generateStaticParams() {
+  const slugs = await getAllComparisonSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
-// ─── Helper: fetch ALL products for a vendor (for the client dropdown) ───
-async function fetchAllProductsForVendor(
-  vendorSlug: string,
-): Promise<Product[]> {
-  const formattedVendor = vendorSlug.trim().toLowerCase().replace(/-/g, " ");
+// ─── Resolve + canonicalize the incoming slug ───
+// Comparison slugs are symmetric (a-vs-b === b-vs-a), which is a duplicate
+// content problem for search engines. Any non-canonical order permanently
+// redirects to the canonical one before any data is fetched. Called from
+// both generateMetadata and the page component since Next may run them
+// concurrently — it's cheap pure-string logic, no DB call involved.
+function resolveCompareRoute(rawSlug?: string): {
+  vendor1Slug: string;
+  vendor2Slug: string;
+  canonicalSlug: string;
+} {
+  if (!rawSlug) notFound();
 
+  const decodedSlug = decodeURIComponent(rawSlug);
+  const parsed = parseCompareSlug(decodedSlug);
+  if (!parsed) notFound();
+
+  const vendor1Slug = toSlug(parsed.vendor1Slug);
+  const vendor2Slug = toSlug(parsed.vendor2Slug);
+  const canonicalSlug = canonicalizeSlug(vendor1Slug, vendor2Slug);
+
+  if (decodedSlug !== canonicalSlug) {
+    permanentRedirect(`/compare/${canonicalSlug}`);
+  }
+
+  return { vendor1Slug, vendor2Slug, canonicalSlug };
+}
+
+// ─── Helper: fetch every disposable product once, matched to vendors by
+// re-slugifying the real `vendor` column (see productsForVendorSlug) rather
+// than an `ilike` reconstructed from the URL slug — the latter is lossy for
+// any vendor name with punctuation (e.g. "Drip'n EVO Series 28K"), since the
+// stripped apostrophe can never be reconstructed from the slug alone. ───
+async function fetchAllDisposableProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from("products")
     .select("*")
-    .ilike("vendor", formattedVendor)
-    .limit(1000)
-    .order("title", { ascending: true });
+    .eq("productType", "DISPOSABLES")
+    .not("vendor", "is", null);
 
   if (error || !data) return [];
   return data as Product[];
@@ -70,57 +98,16 @@ function truncate(str: string, max: number): string {
   return (lastSpace > 0 ? trimmed.slice(0, lastSpace) : trimmed) + "…";
 }
 
-function getWinnerName(
-  winner: string,
-  vendor1Name: string,
-  vendor2Name: string,
-): string {
-  if (winner === "left") return vendor1Name;
-  if (winner === "right") return vendor2Name;
-  return winner;
-}
-
-// ─── FIX: Sanitize verdict HTML to strip any <title>, <meta>, <head>, <link> tags ───
-// These tags in verdict content cause duplicate titles/descriptions in crawlers
-function sanitizeVerdictHtml(html: string): string {
-  if (!html) return "";
-  return (
-    html
-      // Remove <title>...</title> tags (case-insensitive, handles multiline)
-      .replace(/<title[^>]*>[\s\S]*?<\/title>/gi, "")
-      // Remove <meta> tags (self-closing or not)
-      .replace(/<meta[^>]*\/?>/gi, "")
-      // Remove <head>...</head> blocks entirely
-      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
-      // Remove stray <link> tags (canonical, stylesheet injections, etc.)
-      .replace(/<link[^>]*\/?>/gi, "")
-      // Remove <style> blocks that may have been injected
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-      // Remove <script> blocks
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-  );
-}
-
 // ─── generateMetadata ───────────────────────────────────────
 export async function generateMetadata(context: {
   params: Promise<{ slug?: string }>;
 }): Promise<Metadata> {
-  const { slug } = await context.params;
+  const { slug: rawSlug } = await context.params;
+  const { vendor1Slug, vendor2Slug, canonicalSlug } =
+    resolveCompareRoute(rawSlug);
 
-  if (!slug || !slug.includes("-vs-")) {
-    return {
-      title: "Compare Disposables | New City Vapes",
-      description:
-        "Explore side-by-side vape comparisons across top disposable brands in Canada.",
-      alternates: {
-        canonical: "https://compare.newcityvapes.com",
-      },
-    };
-  }
-
-  const [raw1, raw2] = slug.split("-vs-");
-  const vendor1Name = formatVendorName(decodeURIComponent(raw1));
-  const vendor2Name = formatVendorName(decodeURIComponent(raw2));
+  const vendor1Name = formatVendorName(vendor1Slug);
+  const vendor2Name = formatVendorName(vendor2Slug);
 
   const fullTitle = buildPageTitle(vendor1Name, vendor2Name);
   const title = truncate(fullTitle, 60);
@@ -128,7 +115,7 @@ export async function generateMetadata(context: {
   const fullDesc = buildMetaDescription(vendor1Name, vendor2Name);
   const description = truncate(fullDesc, 155);
 
-  const pageUrl = `https://compare.newcityvapes.com/compare/${slug}`;
+  const pageUrl = `https://compare.newcityvapes.com/compare/${canonicalSlug}`;
 
   return {
     title,
@@ -164,33 +151,33 @@ export default async function Page({
 }: {
   params: Promise<{ slug?: string }>;
 }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const { vendor1Slug, vendor2Slug, canonicalSlug } =
+    resolveCompareRoute(rawSlug);
 
-  const [v1, v2] = slug?.split("-vs-") ?? [];
-  if (!v1 || !v2) return notFound();
-
-  const vendor1Slug = toSlug(decodeURIComponent(v1));
-  const vendor2Slug = toSlug(decodeURIComponent(v2));
-  const combinedSlug = `${vendor1Slug}-vs-${vendor2Slug}`;
-
-  const vendor1Name = formatVendorName(decodeURIComponent(v1));
-  const vendor2Name = formatVendorName(decodeURIComponent(v2));
+  const vendor1Name = formatVendorName(vendor1Slug);
+  const vendor2Name = formatVendorName(vendor2Slug);
 
   // Fetch products server-side
-  const product1 = await fetchProductForVendor(vendor1Slug);
-  const product2 = await fetchProductForVendor(vendor2Slug);
-  const products1 = await fetchAllProductsForVendor(vendor1Slug);
-  const products2 = await fetchAllProductsForVendor(vendor2Slug);
+  const allProducts = await fetchAllDisposableProducts();
+  const products1 = productsForVendorSlug(allProducts, vendor1Slug);
+  const products2 = productsForVendorSlug(allProducts, vendor2Slug);
+  const product1 = products1[0] ?? null;
+  const product2 = products2[0] ?? null;
+
+  // A pair with no real product data on one side has nothing genuinely
+  // comparable to show — a real 404 instead of a half-rendered page.
+  if (!product1 || !product2) return notFound();
 
   // Comparison result & FAQs
-  const result =
-    product1 && product2
-      ? compareProducts(product1, product2, vendor1Name, vendor2Name)
-      : null;
-  const faqs =
-    product1 && product2 && result
-      ? generateFAQs(product1, product2, vendor1Name, vendor2Name, result)
-      : [];
+  const result = compareProducts(product1, product2, vendor1Name, vendor2Name);
+  const faqs = generateFAQs(
+    product1,
+    product2,
+    vendor1Name,
+    vendor2Name,
+    result,
+  );
 
   const comparisonAttributes = [
     { label: "PUFF COUNT", key: "puffCount" },
@@ -202,14 +189,21 @@ export default async function Page({
     { label: "NUMBER OF FLAVOURS", key: "numberOfFlavours" },
   ];
 
-  // Verdict — FIX: sanitize HTML to remove any injected <title>/<meta> tags
-  const { data: verdictData } = await supabase
+  // Verdict — the ~2,800 existing rows were keyed by a pre-rebuild slug
+  // format (and, for many pairs, under BOTH vendor orderings as separate
+  // rows), so lookups check every historical slug form a verdict for this
+  // pair could still be stored under. See lib/comparisons.ts for why.
+  const verdictCandidates = verdictSlugCandidates(
+    product1.vendor,
+    product2.vendor,
+    canonicalSlug,
+  );
+  const { data: verdictRows } = await supabase
     .from("verdicts")
-    .select("content")
-    .eq("slug", combinedSlug)
-    .maybeSingle();
+    .select("slug, content")
+    .in("slug", verdictCandidates);
 
-  const rawVerdict = verdictData?.content || "";
+  const rawVerdict = pickVerdictContent(verdictRows ?? [], verdictCandidates) ?? "";
   const verdict = sanitizeVerdictHtml(rawVerdict);
 
   const today = new Date().toLocaleDateString("en-CA", {
@@ -220,21 +214,17 @@ export default async function Page({
 
   return (
     <>
-      {/* ✅ JSON-LD structured data */}
-      {product1 && (
-        <ProductJsonLd product={product1} vendorName={vendor1Name} />
-      )}
-      {product2 && (
-        <ProductJsonLd product={product2} vendorName={vendor2Name} />
-      )}
+      {/* JSON-LD structured data */}
+      <ProductJsonLd product={product1} vendorName={vendor1Name} />
+      <ProductJsonLd product={product2} vendorName={vendor2Name} />
       <FAQJsonLd faqs={faqs} />
       <BreadcrumbJsonLd
         vendor1={vendor1Name}
         vendor2={vendor2Name}
-        slug={combinedSlug}
+        slug={canonicalSlug}
       />
 
-      {/* ✅ Breadcrumb */}
+      {/* Breadcrumb */}
       <nav
         aria-label="Breadcrumb"
         className="text-sm text-gray-500 text-center pt-4 pb-2"
@@ -264,130 +254,126 @@ export default async function Page({
         </ol>
       </nav>
 
-      {/* ✅ Freshness date */}
+      {/* Freshness date */}
       <p className="text-center text-xs text-gray-400 mb-4">
         Data last updated: {today}
       </p>
 
-      {/* ✅ Interactive dropdowns — shown at the TOP, above the SSR table */}
+      {/* Interactive dropdowns — shown at the TOP, above the SSR table */}
       <ClientOnlyRender
-        vendor1={decodeURIComponent(v1)}
-        vendor2={decodeURIComponent(v2)}
+        vendor1={vendor1Slug}
+        vendor2={vendor2Slug}
         initialProducts1={products1}
         initialProducts2={products2}
       />
 
-      {/* ✅ SERVER-RENDERED visible comparison table — Google can read this */}
-      {product1 && product2 && (
-        <div className="comparison-container" id="ssr-comparison">
-          <h1 className="page-title">
-            {vendor1Name} vs {vendor2Name}
-          </h1>
-          <h2 className="page-subtitle">Disposable Vape Comparison — Canada</h2>
+      {/* SERVER-RENDERED visible comparison table — Google can read this */}
+      <div className="comparison-container" id="ssr-comparison">
+        <h1 className="page-title">
+          {vendor1Name} vs {vendor2Name}
+        </h1>
+        <h2 className="page-subtitle">Disposable Vape Comparison — Canada</h2>
 
-          {/* Product images + buy buttons */}
-          <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 relative text-center">
-            {[
-              { product: product1, vendorName: vendor1Name },
-              { product: product2, vendorName: vendor2Name },
-            ].map(({ product, vendorName: vName }, i) => (
-              <div key={i} className="product-column">
-                <p className="font-bold text-lg mb-2">{vName}</p>
-                {product.imageUrl && (
-                  <div className="product-image-container">
-                    <img
-                      src={product.imageUrl}
-                      alt={`${product.title} disposable vape`}
-                      width={350}
-                      height={350}
-                      className="product-image"
-                    />
-                  </div>
-                )}
-                <a
-                  href={`https://newcityvapes.com/collections/${
-                    (product as any).collectionHandle ?? toSlug(vName)
-                  }`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="buy-button-gold"
-                >
-                  BUY NOW — ${product.price.toFixed(2)} CAD
-                </a>
-              </div>
-            ))}
-          </div>
-
-          {/* Comparison table — FIX: changed from <h2> to <h3> to avoid duplicate heading hierarchy */}
-          <h3 className="comparison-header">
-            {vendor1Name} vs {vendor2Name}
-          </h3>
-          <div
-            className="comparison-table"
-            role="table"
-            aria-label="Vape comparison table"
-          >
-            {comparisonAttributes.map(({ label, key }) => {
-              const val1 =
-                (product1[key as keyof typeof product1] as number) ?? 0;
-              const val2 =
-                (product2[key as keyof typeof product2] as number) ?? 0;
-
-              const higherIsBetter = [
-                "puffCount",
-                "ml",
-                "battery",
-                "numberOfFlavours",
-              ].includes(key);
-              const lowerIsBetter = [
-                "price",
-                "pricePerPuff",
-                "pricePerML",
-              ].includes(key);
-
-              const left1wins =
-                val1 !== val2 &&
-                ((higherIsBetter && val1 > val2) ||
-                  (lowerIsBetter && val1 < val2));
-              const right2wins =
-                val1 !== val2 &&
-                ((higherIsBetter && val2 > val1) ||
-                  (lowerIsBetter && val2 < val1));
-
-              return (
-                <div key={key} className="attribute-row" role="row">
-                  <div className="attribute-header" role="columnheader">
-                    <h3 className="text-base font-semibold m-0 p-0">{label}</h3>
-                  </div>
-                  <div
-                    className="attribute-values flex flex-row gap-2 w-full justify-between"
-                    role="row"
-                  >
-                    <span
-                      className={`text-center w-1/2 block py-1 px-4 rounded-full ${
-                        left1wins ? "bg-green-200 font-semibold" : "opacity-70"
-                      }`}
-                      role="cell"
-                    >
-                      {formatValue(val1, key)} {left1wins && <span>🏆</span>}
-                    </span>
-                    <span
-                      className={`text-center w-1/2 block py-1 px-4 rounded-full ${
-                        right2wins ? "bg-green-200 font-semibold" : "opacity-70"
-                      }`}
-                      role="cell"
-                    >
-                      {formatValue(val2, key)} {right2wins && <span>🏆</span>}
-                    </span>
-                  </div>
+        {/* Product images + buy buttons */}
+        <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 relative text-center">
+          {[
+            { product: product1, vendorName: vendor1Name },
+            { product: product2, vendorName: vendor2Name },
+          ].map(({ product, vendorName: vName }, i) => (
+            <div key={i} className="product-column">
+              <p className="font-bold text-lg mb-2">{vName}</p>
+              {product.imageUrl && (
+                <div className="product-image-container">
+                  <Image
+                    src={product.imageUrl}
+                    alt={`${product.title} disposable vape`}
+                    width={350}
+                    height={350}
+                    className="product-image"
+                  />
                 </div>
-              );
-            })}
-          </div>
+              )}
+              <a
+                href={`https://newcityvapes.com/collections/${
+                  product.collectionHandle ?? toSlug(vName)
+                }`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="buy-button-gold"
+              >
+                BUY NOW — ${product.price.toFixed(2)} CAD
+              </a>
+            </div>
+          ))}
         </div>
-      )}
 
-      {/* ✅ Verdict — now sanitized to prevent duplicate title/meta injection */}
+        {/* Comparison table */}
+        <h3 className="comparison-header">
+          {vendor1Name} vs {vendor2Name}
+        </h3>
+        <div
+          className="comparison-table"
+          role="table"
+          aria-label="Vape comparison table"
+        >
+          {comparisonAttributes.map(({ label, key }) => {
+            const val1 = (product1[key as keyof typeof product1] as number) ?? 0;
+            const val2 = (product2[key as keyof typeof product2] as number) ?? 0;
+
+            const higherIsBetter = [
+              "puffCount",
+              "ml",
+              "battery",
+              "numberOfFlavours",
+            ].includes(key);
+            const lowerIsBetter = [
+              "price",
+              "pricePerPuff",
+              "pricePerML",
+            ].includes(key);
+
+            const left1wins =
+              val1 !== val2 &&
+              ((higherIsBetter && val1 > val2) ||
+                (lowerIsBetter && val1 < val2));
+            const right2wins =
+              val1 !== val2 &&
+              ((higherIsBetter && val2 > val1) ||
+                (lowerIsBetter && val2 < val1));
+
+            return (
+              <div key={key} className="attribute-row" role="row">
+                <div className="attribute-header" role="columnheader">
+                  <h3 className="text-base font-semibold m-0 p-0">{label}</h3>
+                </div>
+                <div
+                  className="attribute-values flex flex-row gap-2 w-full justify-between"
+                  role="row"
+                >
+                  <span
+                    className={`text-center w-1/2 block py-1 px-4 rounded-full ${
+                      left1wins ? "bg-green-200 font-semibold" : "opacity-70"
+                    }`}
+                    role="cell"
+                  >
+                    {formatValue(val1, key)} {left1wins && <span>🏆</span>}
+                  </span>
+                  <span
+                    className={`text-center w-1/2 block py-1 px-4 rounded-full ${
+                      right2wins ? "bg-green-200 font-semibold" : "opacity-70"
+                    }`}
+                    role="cell"
+                  >
+                    {formatValue(val2, key)} {right2wins && <span>🏆</span>}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Verdict — sanitized to prevent duplicate title/meta injection */}
       {verdict && (
         <div
           className="rich-verdict max-w-4xl mx-auto leading-relaxed space-y-4 mt-16 px-4"
@@ -395,7 +381,7 @@ export default async function Page({
         />
       )}
 
-      {/* ✅ FAQ section */}
+      {/* FAQ section */}
       {faqs.length > 0 && (
         <section className="max-w-4xl mx-auto mt-12 px-4 text-left">
           <h2
@@ -419,11 +405,11 @@ export default async function Page({
         </section>
       )}
 
-      {/* ✅ Related comparisons */}
+      {/* Related comparisons */}
       <RelatedComparisons
         vendor1Slug={vendor1Slug}
         vendor2Slug={vendor2Slug}
-        currentSlug={combinedSlug}
+        currentSlug={canonicalSlug}
       />
     </>
   );

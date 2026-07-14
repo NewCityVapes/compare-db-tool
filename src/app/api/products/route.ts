@@ -1,5 +1,6 @@
 import { supabase } from "../../../../lib/supabase.mjs";
 import { NextResponse, NextRequest } from "next/server";
+import { productsForVendorSlug } from "../../../../lib/comparisons";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,19 +14,21 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const formattedVendor = vendor.trim().toLowerCase().replace(/-/g, " ");
-    console.log(`🔍 Fetching products for vendor: "${formattedVendor}"`);
-
+    // Matched by re-slugifying each row's real `vendor` value rather than
+    // reconstructing a search string from the slug — the latter is lossy for
+    // vendor names with punctuation (e.g. "Drip'n EVO Series 28K"), since a
+    // stripped apostrophe can never be reconstructed from the slug alone.
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .ilike("vendor", formattedVendor)
-      .limit(1000)
+      .not("vendor", "is", null)
       .order("title", { ascending: true });
 
     if (error) throw error;
 
-    return NextResponse.json(data);
+    const matches = productsForVendorSlug(data ?? [], vendor);
+
+    return NextResponse.json(matches);
   } catch (error) {
     console.error("❌ API Error fetching products:", error);
     return NextResponse.json(

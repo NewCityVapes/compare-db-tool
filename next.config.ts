@@ -10,13 +10,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  experimental: {
-    middlewarePrefetch: "strict",
-  },
-
   // ✅ Replaces deprecated `domains` config
   images: {
     remotePatterns: [

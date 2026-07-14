@@ -1,44 +1,24 @@
-import { supabase } from "../../../lib/supabase.mjs";
+import { getAllComparisonSlugs } from "../../../lib/comparisons";
 
 export async function GET() {
-  const allSlugs: string[] = [];
-
-  let from = 0;
-  let to = 999;
-  let hasMore = true;
-
-  while (hasMore) {
-    const { data, error } = await supabase
-      .from("verdicts")
-      .select("slug")
-      .range(from, to);
-
-    if (error) {
-      console.error(
-        "❌ Error fetching verdict slugs for sitemap:",
-        error.message,
-      );
-      return new Response("Error generating sitemap", { status: 500 });
-    }
-
-    if (!data || data.length === 0) {
-      hasMore = false;
-    } else {
-      allSlugs.push(...data.map((d: { slug: string }) => d.slug));
-      from += 1000;
-      to += 1000;
-    }
-  }
-
+  const allSlugs = await getAllComparisonSlugs();
   const today = new Date().toISOString().split("T")[0];
 
-  // ✅ FIX: Include browse page so it's discoverable
+  // Sourced from the same valid-vendor-pair set as generateStaticParams and
+  // /browse, so nothing is sitemapped without also being reachable via an
+  // internal link, and nothing indexable is missing from the sitemap.
   const staticPages = [
+    `<url>
+      <loc>https://compare.newcityvapes.com</loc>
+      <lastmod>${today}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>1.0</priority>
+    </url>`,
     `<url>
       <loc>https://compare.newcityvapes.com/browse</loc>
       <lastmod>${today}</lastmod>
       <changefreq>daily</changefreq>
-      <priority>1.0</priority>
+      <priority>0.9</priority>
     </url>`,
   ];
 

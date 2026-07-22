@@ -44,6 +44,11 @@ export default function AdminDashboardPage() {
         Sync Shopify Products
       </button>
       {status && <p className="mt-4 text-red-500">{status}</p>}
+      <p className="mt-8">
+        <a href="/admin/verdicts" className="text-blue-600 hover:underline">
+          Manage verdict content →
+        </a>
+      </p>
     </main>
   );
 }

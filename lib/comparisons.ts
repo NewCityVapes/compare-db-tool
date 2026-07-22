@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { toSlug } from "./utils";
-import { canonicalizeSlug } from "./slug";
+import { canonicalizeSlug, parseCompareSlug } from "./slug";
 import type { Product } from "./seo-utils";
 
 const supabase = createClient(
@@ -105,4 +105,110 @@ export function productsForVendorSlug(
   return products
     .filter((p) => toSlug(p.vendor) === vendorSlug)
     .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+async function fetchAllVerdictRows(): Promise<{ slug: string; content: string }[]> {
+  const rows: { slug: string; content: string }[] = [];
+  let from = 0;
+  const pageSize = 1000;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("verdicts")
+      .select("slug, content")
+      .range(from, from + pageSize - 1);
+
+    if (error || !data || data.length === 0) break;
+    rows.push(...(data as { slug: string; content: string }[]));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return rows;
+}
+
+export interface ComparisonStatus {
+  slug: string;
+  vendor1: string;
+  vendor2: string;
+  hasVerdict: boolean;
+}
+
+/**
+ * All valid comparison pairs with a real display name per vendor (taken from
+ * the products table, not reconstructed from the slug — so "Drip'n EVO
+ * Series 28K" shows correctly instead of "Dripn Evo Series 28k") and whether
+ * a verdict exists for it. Uses the same verdictSlugCandidates/
+ * pickVerdictContent fallback the live page uses, so "has content" here
+ * matches exactly what a visitor would actually see.
+ */
+export async function getComparisonsWithVerdictStatus(): Promise<
+  ComparisonStatus[]
+> {
+  const [productRows, slugs, verdictRows] = await Promise.all([
+    supabase
+      .from("products")
+      .select("vendor")
+      .eq("productType", "DISPOSABLES")
+      .not("vendor", "is", null)
+      .then((res) => res.data ?? []),
+    getAllComparisonSlugs(),
+    fetchAllVerdictRows(),
+  ]);
+
+  const nameBySlug = new Map<string, string>();
+  for (const row of productRows as { vendor: string }[]) {
+    const slug = toSlug(row.vendor);
+    if (slug && !nameBySlug.has(slug)) nameBySlug.set(slug, row.vendor);
+  }
+
+  return slugs.map((slug) => {
+    const [v1Slug, v2Slug] = slug.split("-vs-");
+    const vendor1 = nameBySlug.get(v1Slug) ?? v1Slug;
+    const vendor2 = nameBySlug.get(v2Slug) ?? v2Slug;
+    const candidates = verdictSlugCandidates(vendor1, vendor2, slug);
+    const content = pickVerdictContent(verdictRows, candidates);
+
+    return { slug, vendor1, vendor2, hasVerdict: Boolean(content?.trim()) };
+  });
+}
+
+export interface ComparisonDetail {
+  slug: string;
+  vendor1: string;
+  vendor2: string;
+  content: string;
+}
+
+/** Single-pair version of getComparisonsWithVerdictStatus, for the edit page. */
+export async function getComparisonDetail(
+  slug: string,
+): Promise<ComparisonDetail | null> {
+  const parsed = parseCompareSlug(slug);
+  if (!parsed) return null;
+
+  const { data: productRows } = await supabase
+    .from("products")
+    .select("vendor")
+    .eq("productType", "DISPOSABLES")
+    .not("vendor", "is", null);
+
+  const nameBySlug = new Map<string, string>();
+  for (const row of (productRows ?? []) as { vendor: string }[]) {
+    const s = toSlug(row.vendor);
+    if (s && !nameBySlug.has(s)) nameBySlug.set(s, row.vendor);
+  }
+
+  const vendor1 = nameBySlug.get(parsed.vendor1Slug) ?? parsed.vendor1Slug;
+  const vendor2 = nameBySlug.get(parsed.vendor2Slug) ?? parsed.vendor2Slug;
+
+  const candidates = verdictSlugCandidates(vendor1, vendor2, slug);
+  const { data: verdictRows } = await supabase
+    .from("verdicts")
+    .select("slug, content")
+    .in("slug", candidates);
+
+  const content = pickVerdictContent(verdictRows ?? [], candidates) ?? "";
+
+  return { slug, vendor1, vendor2, content };
 }

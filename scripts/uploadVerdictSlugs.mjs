@@ -64,11 +64,13 @@ function getAllCombinations(vendors) {
   console.log('🔄 Generating all vendor combinations...\n');
   const combinations = [];
 
-  // Generate all A vs B combinations (excluding A vs A)
+  // Each unordered pair exactly once — this previously generated BOTH i,j
+  // and j,i as separate rows, which is the source of the ~1,378 duplicate
+  // reverse-order verdict rows (a-vs-b and b-vs-a as separate DB rows for
+  // the same content). The app's canonical URL only ever uses one order, so
+  // the other row's content was effectively unreachable dead weight.
   for (let i = 0; i < vendors.length; i++) {
-    for (let j = 0; j < vendors.length; j++) {
-      if (i === j) continue; // skip same vendor
-
+    for (let j = i + 1; j < vendors.length; j++) {
       const vendor1 = vendors[i];
       const vendor2 = vendors[j];
       const slug = `${toSlug(vendor1)}-vs-${toSlug(vendor2)}`;

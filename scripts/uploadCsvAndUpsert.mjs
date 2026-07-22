@@ -34,9 +34,12 @@ fs.createReadStream(csvFilePath)
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
       
+      // 'slug' (not 'id') is the real business key — CSV rows won't carry a
+      // matching DB-generated id, so onConflict: 'id' would insert
+      // duplicates on re-runs instead of updating the existing row.
       const { data, error } = await supabase
         .from(tableName)
-        .upsert(batch, { onConflict: 'id' });
+        .upsert(batch, { onConflict: 'slug' });
 
       if (error) {
         console.error(`Error uploading batch ${i}-${i + batch.length}:`, error);

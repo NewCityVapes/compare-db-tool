@@ -17,14 +17,22 @@ export async function POST(req: Request) {
 
   const slug = canonicalizeSlug(vendor1, vendor2);
 
-  const { error } = await supabase.from("verdicts").upsert([
-    {
-      slug,
-      vendor1,
-      vendor2,
-      content,
-    },
-  ]);
+  // Without an explicit onConflict target, PostgREST doesn't know which
+  // unique constraint to merge on and falls back to a plain insert — which
+  // then fails with a 23505 duplicate-key error against the `slug` unique
+  // constraint whenever a verdict for this pair already exists. Confirmed by
+  // reproducing it directly against a throwaway test row.
+  const { error } = await supabase.from("verdicts").upsert(
+    [
+      {
+        slug,
+        vendor1,
+        vendor2,
+        content,
+      },
+    ],
+    { onConflict: "slug" },
+  );
 
   if (error) {
     console.error("Supabase insert error:", error);

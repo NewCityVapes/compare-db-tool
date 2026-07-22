@@ -1,6 +1,7 @@
 import type { IronSessionOptions } from "iron-session";
 import { unsealData } from "iron-session";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 declare module "iron-session" {
   interface IronSessionData {
@@ -34,5 +35,12 @@ export async function isAdminRequest(): Promise<boolean> {
     return session.isAdmin === true;
   } catch {
     return false;
+  }
+}
+
+/** Call at the top of a protected server component; redirects to /admin (login) if not authenticated. */
+export async function requireAdmin(): Promise<void> {
+  if (!(await isAdminRequest())) {
+    redirect("/admin");
   }
 }

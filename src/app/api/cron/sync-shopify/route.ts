@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { syncShopifyProducts } from "../../../../../lib/syncShopify";
 import { revalidateAllComparisons } from "../../../../../lib/revalidate";
 
+// See src/app/api/sync-shopify/route.ts for why this is needed.
+export const maxDuration = 60;
+
 // Vercel Cron requests aren't a logged-in browser, so this can't use the
 // admin session cookie — it checks a shared secret instead. Vercel sends
 // `Authorization: Bearer $CRON_SECRET` automatically for scheduled

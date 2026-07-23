@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import RichTextEditor from "./RichTextEditor";
 
 export default function VerdictEditForm({
   slug,
@@ -45,13 +46,7 @@ export default function VerdictEditForm({
 
   return (
     <div>
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={20}
-        placeholder="Paste HTML content here…"
-        className="w-full p-3 border rounded font-mono text-sm"
-      />
+      <RichTextEditor value={content} onChange={setContent} />
       <div className="flex items-center gap-4 mt-4">
         <button
           onClick={handleSave}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import Image from "next/image";
+import { cache } from "react";
 import { toSlug } from "../../../../lib/utils";
 import { canonicalizeSlug, parseCompareSlug } from "../../../../lib/slug";
 import {
@@ -78,8 +79,10 @@ function resolveCompareRoute(rawSlug?: string): {
 // re-slugifying the real `vendor` column (see productsForVendorSlug) rather
 // than an `ilike` reconstructed from the URL slug — the latter is lossy for
 // any vendor name with punctuation (e.g. "Drip'n EVO Series 28K"), since the
-// stripped apostrophe can never be reconstructed from the slug alone. ───
-async function fetchAllDisposableProducts(): Promise<Product[]> {
+// stripped apostrophe can never be reconstructed from the slug alone.
+// Wrapped in React's cache() so generateMetadata and the page component
+// share one query per request instead of fetching twice.
+const fetchAllDisposableProducts = cache(async (): Promise<Product[]> => {
   const { data, error } = await supabase
     .from("products")
     .select("*")
@@ -88,6 +91,30 @@ async function fetchAllDisposableProducts(): Promise<Product[]> {
 
   if (error || !data) return [];
   return data as Product[];
+});
+
+// ─── Resolve the real, correctly-cased vendor display names ───
+// formatVendorName(slug) was previously used everywhere for display text
+// (H1, <title>, meta description, breadcrumb, FAQ questions) — it
+// reconstructs a name from the URL slug via capitalize-first-letter-of-
+// each-word, which both loses the brand's actual casing (e.g. "STLTH"
+// becomes "Stlth") and has a regex gap that doesn't capitalize a letter
+// directly following a digit (e.g. "80K" becomes "80k"). The real vendor
+// string already exists in the products table with correct casing — this
+// pulls it directly, falling back to the slug reconstruction only for the
+// rare case a pair has no product data (already headed for a 404 anyway).
+async function resolveVendorNames(
+  vendor1Slug: string,
+  vendor2Slug: string,
+): Promise<{ vendor1Name: string; vendor2Name: string }> {
+  const allProducts = await fetchAllDisposableProducts();
+  const product1 = productsForVendorSlug(allProducts, vendor1Slug)[0];
+  const product2 = productsForVendorSlug(allProducts, vendor2Slug)[0];
+
+  return {
+    vendor1Name: product1?.vendor ?? formatVendorName(vendor1Slug),
+    vendor2Name: product2?.vendor ?? formatVendorName(vendor2Slug),
+  };
 }
 
 // ─── HELPERS ────────────────────────────────────────────────
@@ -106,8 +133,10 @@ export async function generateMetadata(context: {
   const { vendor1Slug, vendor2Slug, canonicalSlug } =
     resolveCompareRoute(rawSlug);
 
-  const vendor1Name = formatVendorName(vendor1Slug);
-  const vendor2Name = formatVendorName(vendor2Slug);
+  const { vendor1Name, vendor2Name } = await resolveVendorNames(
+    vendor1Slug,
+    vendor2Slug,
+  );
 
   const fullTitle = buildPageTitle(vendor1Name, vendor2Name);
   const title = truncate(fullTitle, 60);
@@ -155,9 +184,6 @@ export default async function Page({
   const { vendor1Slug, vendor2Slug, canonicalSlug } =
     resolveCompareRoute(rawSlug);
 
-  const vendor1Name = formatVendorName(vendor1Slug);
-  const vendor2Name = formatVendorName(vendor2Slug);
-
   // Fetch products server-side
   const allProducts = await fetchAllDisposableProducts();
   const products1 = productsForVendorSlug(allProducts, vendor1Slug);
@@ -168,6 +194,12 @@ export default async function Page({
   // A pair with no real product data on one side has nothing genuinely
   // comparable to show — a real 404 instead of a half-rendered page.
   if (!product1 || !product2) return notFound();
+
+  // The real vendor string (correct casing, e.g. "STLTH", "FLAVOUR BEAST
+  // ALPHA 80K") rather than a slug reconstruction that both loses brand
+  // casing and mis-capitalizes anything like "80K" -> "80k".
+  const vendor1Name = product1.vendor;
+  const vendor2Name = product2.vendor;
 
   // Comparison result & FAQs
   const result = compareProducts(product1, product2, vendor1Name, vendor2Name);
@@ -384,11 +416,16 @@ export default async function Page({
       {/* FAQ section */}
       {faqs.length > 0 && (
         <section className="max-w-4xl mx-auto mt-12 px-4 text-left">
+          {/* Distinct from a generic "Frequently Asked Questions" heading —
+              editorial verdict content sometimes has its own FAQ section
+              with that exact title, and two adjacent identical headings
+              reads as a duplicate/redundant section to both users and
+              crawlers. */}
           <h2
             className="text-xl font-bold text-center mb-6"
             style={{ color: "#2E323B" }}
           >
-            Frequently Asked Questions: {vendor1Name} vs {vendor2Name}
+            Quick Comparison FAQ: {vendor1Name} vs {vendor2Name}
           </h2>
           <div className="space-y-4">
             {faqs.map((faq, idx) => (

@@ -16,19 +16,11 @@ const supabase = createClient(
  * nothing is statically built that isn't indexable.
  */
 export async function getAllComparisonSlugs(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("vendor")
-    .eq("productType", "DISPOSABLES")
-    .not("vendor", "is", null);
-
-  if (error || !data) return [];
+  const rows = await fetchAllDisposableVendorRows();
 
   const vendorSlugs = [
     ...new Set(
-      data
-        .map((row) => toSlug((row as { vendor: string }).vendor))
-        .filter((slug) => slug.length > 0),
+      rows.map((row) => toSlug(row.vendor)).filter((slug) => slug.length > 0),
     ),
   ];
 
@@ -107,6 +99,38 @@ export function productsForVendorSlug(
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
+/**
+ * Every DISPOSABLES product's vendor, paginated. The catalog passed 1,000
+ * rows a while back — PostgREST's default response cap — and every one of
+ * getAllComparisonSlugs / getComparisonsWithVerdictStatus / getComparisonDetail
+ * had its own un-paginated version of this query, silently truncating the
+ * vendor list. Confirmed by a brand-new vendor (added in the most recent
+ * catalog growth) disappearing from the admin list — the query was almost
+ * certainly returning rows in roughly insertion order, so the newest vendor
+ * fell past row 1,000. One paginated fetch shared by all three now.
+ */
+async function fetchAllDisposableVendorRows(): Promise<{ vendor: string }[]> {
+  const rows: { vendor: string }[] = [];
+  let from = 0;
+  const pageSize = 1000;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("vendor")
+      .eq("productType", "DISPOSABLES")
+      .not("vendor", "is", null)
+      .range(from, from + pageSize - 1);
+
+    if (error || !data || data.length === 0) break;
+    rows.push(...(data as { vendor: string }[]));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return rows;
+}
+
 async function fetchAllVerdictRows(): Promise<{ slug: string; content: string }[]> {
   const rows: { slug: string; content: string }[] = [];
   let from = 0;
@@ -146,18 +170,13 @@ export async function getComparisonsWithVerdictStatus(): Promise<
   ComparisonStatus[]
 > {
   const [productRows, slugs, verdictRows] = await Promise.all([
-    supabase
-      .from("products")
-      .select("vendor")
-      .eq("productType", "DISPOSABLES")
-      .not("vendor", "is", null)
-      .then((res) => res.data ?? []),
+    fetchAllDisposableVendorRows(),
     getAllComparisonSlugs(),
     fetchAllVerdictRows(),
   ]);
 
   const nameBySlug = new Map<string, string>();
-  for (const row of productRows as { vendor: string }[]) {
+  for (const row of productRows) {
     const slug = toSlug(row.vendor);
     if (slug && !nameBySlug.has(slug)) nameBySlug.set(slug, row.vendor);
   }
@@ -187,14 +206,10 @@ export async function getComparisonDetail(
   const parsed = parseCompareSlug(slug);
   if (!parsed) return null;
 
-  const { data: productRows } = await supabase
-    .from("products")
-    .select("vendor")
-    .eq("productType", "DISPOSABLES")
-    .not("vendor", "is", null);
+  const productRows = await fetchAllDisposableVendorRows();
 
   const nameBySlug = new Map<string, string>();
-  for (const row of (productRows ?? []) as { vendor: string }[]) {
+  for (const row of productRows) {
     const s = toSlug(row.vendor);
     if (s && !nameBySlug.has(s)) nameBySlug.set(s, row.vendor);
   }

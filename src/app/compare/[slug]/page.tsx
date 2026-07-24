@@ -83,15 +83,32 @@ function resolveCompareRoute(rawSlug?: string): {
 // stripped apostrophe can never be reconstructed from the slug alone.
 // Wrapped in React's cache() so generateMetadata and the page component
 // share one query per request instead of fetching twice.
+//
+// Paginated — the catalog passed 1,000 rows (PostgREST's default response
+// cap) a while back, which was silently truncating this to the first 1,000
+// rows in default order. Any vendor whose products sorted past that cutoff
+// (confirmed with a newly-added vendor) had no product data here at all,
+// which meant every comparison page involving it hit the notFound() below.
 const fetchAllDisposableProducts = cache(async (): Promise<Product[]> => {
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("productType", "DISPOSABLES")
-    .not("vendor", "is", null);
+  const products: Product[] = [];
+  let from = 0;
+  const pageSize = 1000;
 
-  if (error || !data) return [];
-  return data as Product[];
+  while (true) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .eq("productType", "DISPOSABLES")
+      .not("vendor", "is", null)
+      .range(from, from + pageSize - 1);
+
+    if (error || !data || data.length === 0) break;
+    products.push(...(data as Product[]));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return products;
 });
 
 // ─── Resolve the real, correctly-cased vendor display names ───

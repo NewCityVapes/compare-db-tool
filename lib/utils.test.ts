@@ -16,14 +16,11 @@ describe("toSlug", () => {
 });
 
 describe("formatUpdatedAt", () => {
-  it("omits the year for dates in the current year", () => {
+  it("always includes the year, current or past", () => {
     const thisYear = new Date().getFullYear();
-    const formatted = formatUpdatedAt(`${thisYear}-07-24T12:00:00.000Z`);
-    expect(formatted).not.toContain(String(thisYear));
-  });
-
-  it("includes the year for dates in a past year", () => {
-    const formatted = formatUpdatedAt("2020-07-24T12:00:00.000Z");
-    expect(formatted).toContain("2020");
+    expect(formatUpdatedAt(`${thisYear}-07-24T12:00:00.000Z`)).toContain(
+      String(thisYear),
+    );
+    expect(formatUpdatedAt("2020-07-24T12:00:00.000Z")).toContain("2020");
   });
 });

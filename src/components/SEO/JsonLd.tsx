@@ -4,6 +4,7 @@
 // ============================================================
 
 import type { Product } from "../../../lib/seo-utils";
+import { truncate } from "../../../lib/seo-utils";
 
 // ─── Product Schema ───
 export function ProductJsonLd({
@@ -22,7 +23,11 @@ export function ProductJsonLd({
       "@type": "Brand",
       name: product.vendor || vendorName,
     },
-    description: `${product.title} disposable vape — ${product.puffCount?.toLocaleString() ?? "N/A"} puffs, ${product.ml ?? "N/A"}ML, ${product.battery ?? "N/A"}mAh battery.`,
+    // Real Shopify product description when available — falls back to a
+    // spec-based sentence for the ~97% of products that don't have one.
+    description: product.description
+      ? truncate(product.description, 300)
+      : `${product.title} disposable vape — ${product.puffCount?.toLocaleString() ?? "N/A"} puffs, ${product.ml ?? "N/A"}ML, ${product.battery ?? "N/A"}mAh battery.`,
     ...(product.price
       ? {
           offers: {

@@ -19,6 +19,7 @@ import {
   generateFAQs,
   formatValue,
   sanitizeVerdictHtml,
+  truncate,
 } from "../../../../lib/seo-utils";
 import type { Product } from "../../../../lib/seo-utils";
 import {
@@ -117,13 +118,6 @@ async function resolveVendorNames(
   };
 }
 
-// ─── HELPERS ────────────────────────────────────────────────
-function truncate(str: string, max: number): string {
-  if (str.length <= max) return str;
-  const trimmed = str.slice(0, max - 1);
-  const lastSpace = trimmed.lastIndexOf(" ");
-  return (lastSpace > 0 ? trimmed.slice(0, lastSpace) : trimmed) + "…";
-}
 
 // ─── generateMetadata ───────────────────────────────────────
 export async function generateMetadata(context: {
@@ -356,6 +350,12 @@ export default async function Page({
                   </span>
                 )}
               </div>
+
+              {product.description && (
+                <p className="text-sm text-gray-600 max-w-sm mx-auto mb-3 leading-relaxed">
+                  {truncate(product.description, 180)}
+                </p>
+              )}
 
               <a
                 href={`https://newcityvapes.com/collections/${

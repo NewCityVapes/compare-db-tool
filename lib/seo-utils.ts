@@ -20,6 +20,7 @@ export type Product = {
   features?: string;
   expertReview?: string;
   collectionHandle?: string;
+  description?: string;
 };
 
 // ─── Comparison result ───
@@ -101,6 +102,14 @@ export function compareProducts(
   }
 
   return { leftScore, rightScore, winner, winnerName, breakdown };
+}
+
+// ─── Truncate at a word boundary, adding an ellipsis ───
+export function truncate(str: string, max: number): string {
+  if (str.length <= max) return str;
+  const trimmed = str.slice(0, max - 1);
+  const lastSpace = trimmed.lastIndexOf(" ");
+  return (lastSpace > 0 ? trimmed.slice(0, lastSpace) : trimmed) + "…";
 }
 
 // ─── Format vendor slug to display name ───

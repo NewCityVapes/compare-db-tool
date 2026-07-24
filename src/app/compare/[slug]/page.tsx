@@ -313,7 +313,7 @@ export default async function Page({
             { product: product2, vendorName: vendor2Name },
           ].map(({ product, vendorName: vName }, i) => (
             <div key={i} className="product-column">
-              <p className="font-bold text-lg mb-2">{vName}</p>
+              <h3 className="font-bold text-lg mb-2">{vName}</h3>
               {product.imageUrl && (
                 <div className="product-image-container">
                   <Image
@@ -325,6 +325,38 @@ export default async function Page({
                   />
                 </div>
               )}
+
+              {/* Quick spec facts — previously the only info shown up here
+                  was the buy button; the real numbers already existed but
+                  only appeared in the comparison table further down. */}
+              <div className="flex flex-wrap justify-center gap-2 my-3 text-xs">
+                {product.puffCount != null && (
+                  <span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 font-semibold">
+                    {product.puffCount.toLocaleString()} puffs
+                  </span>
+                )}
+                {product.ml != null && (
+                  <span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 font-semibold">
+                    {product.ml}mL e-liquid
+                  </span>
+                )}
+                {product.battery != null && (
+                  <span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 font-semibold">
+                    {product.battery}mAh battery
+                  </span>
+                )}
+                {product.numberOfFlavours != null && (
+                  <span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 font-semibold">
+                    {product.numberOfFlavours} flavours
+                  </span>
+                )}
+                {product.pricePerPuff != null && (
+                  <span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 font-semibold">
+                    {formatValue(product.pricePerPuff, "pricePerPuff")}/puff
+                  </span>
+                )}
+              </div>
+
               <a
                 href={`https://newcityvapes.com/collections/${
                   product.collectionHandle ?? toSlug(vName)

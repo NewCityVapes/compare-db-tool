@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { ComparisonStatus } from "../../../../lib/comparisons";
+import { formatUpdatedAt } from "../../../../lib/utils";
 
 export default function VerdictsListClient({
   comparisons,
@@ -50,22 +51,29 @@ export default function VerdictsListClient({
 
       <ul className="divide-y border rounded">
         {filtered.slice(0, 200).map((c) => (
-          <li key={c.slug} className="flex items-center justify-between p-3">
+          <li key={c.slug} className="flex items-center justify-between p-3 gap-3">
             <a
               href={`/admin/verdicts/${c.slug}`}
               className="text-sm hover:underline"
             >
               {c.vendor1} vs {c.vendor2}
             </a>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
-                c.hasVerdict
-                  ? "bg-green-100 text-green-800"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              {c.hasVerdict ? "Has content" : "Empty"}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              {c.updatedAt && (
+                <span className="text-xs text-gray-400">
+                  {formatUpdatedAt(c.updatedAt)}
+                </span>
+              )}
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  c.hasVerdict
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {c.hasVerdict ? "Has content" : "Empty"}
+              </span>
+            </div>
           </li>
         ))}
       </ul>

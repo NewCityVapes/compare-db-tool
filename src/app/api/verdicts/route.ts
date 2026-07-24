@@ -22,6 +22,10 @@ export async function POST(req: Request) {
   // then fails with a 23505 duplicate-key error against the `slug` unique
   // constraint whenever a verdict for this pair already exists. Confirmed by
   // reproducing it directly against a throwaway test row.
+  // Set explicitly rather than relying on a DB default — a column DEFAULT
+  // only applies on INSERT, not on the UPDATE side of this upsert, so an
+  // edit to existing content would leave the timestamp stuck at its
+  // original creation time otherwise.
   const { error } = await supabase.from("verdicts").upsert(
     [
       {
@@ -29,6 +33,7 @@ export async function POST(req: Request) {
         vendor1,
         vendor2,
         content,
+        updated_at: new Date().toISOString(),
       },
     ],
     { onConflict: "slug" },

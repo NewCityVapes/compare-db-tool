@@ -11,3 +11,14 @@ export function toSlug(str: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+/** Short admin-UI date format, e.g. "Jul 24" or "Jul 24, 2025" for past years. */
+export function formatUpdatedAt(iso: string): string {
+  const date = new Date(iso);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString("en-CA", {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+}

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   verdictSlugCandidates,
   pickVerdictContent,
+  pickVerdictRow,
   productsForVendorSlug,
 } from "./comparisons";
 import type { Product } from "./seo-utils";
@@ -58,6 +59,26 @@ describe("pickVerdictContent", () => {
 
   it("returns null when nothing matches", () => {
     expect(pickVerdictContent([], ["a-vs-b"])).toBeNull();
+  });
+});
+
+describe("pickVerdictRow", () => {
+  it("returns the full row, including updated_at, not just content", () => {
+    const row = pickVerdictRow(
+      [
+        {
+          slug: "stlth-vs-vice",
+          content: "canonical content",
+          updated_at: "2026-07-24T12:00:00.000Z",
+        },
+      ],
+      ["stlth-vs-vice"],
+    );
+    expect(row?.updated_at).toBe("2026-07-24T12:00:00.000Z");
+  });
+
+  it("returns null when nothing matches", () => {
+    expect(pickVerdictRow([], ["a-vs-b"])).toBeNull();
   });
 });
 

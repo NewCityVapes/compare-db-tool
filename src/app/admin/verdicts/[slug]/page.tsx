@@ -24,7 +24,7 @@ export default async function VerdictEditPage({
       <h1 className="text-2xl font-bold mt-2 mb-1">
         {detail.vendor1} vs {detail.vendor2}
       </h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-gray-500 mb-1">
         <a
           href={`/compare/${slug}`}
           target="_blank"
@@ -33,6 +33,14 @@ export default async function VerdictEditPage({
         >
           /compare/{slug} ↗
         </a>
+      </p>
+      <p className="text-xs text-gray-400 mb-6">
+        {detail.updatedAt
+          ? `Last edited ${new Date(detail.updatedAt).toLocaleString("en-CA", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}`
+          : "Never edited"}
       </p>
       <VerdictEditForm
         slug={slug}

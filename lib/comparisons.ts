@@ -69,16 +69,30 @@ export function verdictSlugCandidates(
   ])];
 }
 
-/** Picks the highest-priority matching row's content, or null if none match. */
-export function pickVerdictContent(
-  rows: { slug: string; content: string }[],
+export interface VerdictRow {
+  slug: string;
+  content: string;
+  updated_at?: string | null;
+}
+
+/** Picks the highest-priority matching row, or null if none match. */
+export function pickVerdictRow(
+  rows: VerdictRow[],
   candidatesInPriorityOrder: string[],
-): string | null {
+): VerdictRow | null {
   for (const candidate of candidatesInPriorityOrder) {
     const row = rows.find((r) => r.slug === candidate);
-    if (row) return row.content;
+    if (row) return row;
   }
   return null;
+}
+
+/** Picks the highest-priority matching row's content, or null if none match. */
+export function pickVerdictContent(
+  rows: VerdictRow[],
+  candidatesInPriorityOrder: string[],
+): string | null {
+  return pickVerdictRow(rows, candidatesInPriorityOrder)?.content ?? null;
 }
 
 /**
@@ -131,19 +145,19 @@ async function fetchAllDisposableVendorRows(): Promise<{ vendor: string }[]> {
   return rows;
 }
 
-async function fetchAllVerdictRows(): Promise<{ slug: string; content: string }[]> {
-  const rows: { slug: string; content: string }[] = [];
+async function fetchAllVerdictRows(): Promise<VerdictRow[]> {
+  const rows: VerdictRow[] = [];
   let from = 0;
   const pageSize = 1000;
 
   while (true) {
     const { data, error } = await supabase
       .from("verdicts")
-      .select("slug, content")
+      .select("slug, content, updated_at")
       .range(from, from + pageSize - 1);
 
     if (error || !data || data.length === 0) break;
-    rows.push(...(data as { slug: string; content: string }[]));
+    rows.push(...(data as VerdictRow[]));
     if (data.length < pageSize) break;
     from += pageSize;
   }
@@ -156,6 +170,7 @@ export interface ComparisonStatus {
   vendor1: string;
   vendor2: string;
   hasVerdict: boolean;
+  updatedAt: string | null;
 }
 
 /**
@@ -186,9 +201,15 @@ export async function getComparisonsWithVerdictStatus(): Promise<
     const vendor1 = nameBySlug.get(v1Slug) ?? v1Slug;
     const vendor2 = nameBySlug.get(v2Slug) ?? v2Slug;
     const candidates = verdictSlugCandidates(vendor1, vendor2, slug);
-    const content = pickVerdictContent(verdictRows, candidates);
+    const row = pickVerdictRow(verdictRows, candidates);
 
-    return { slug, vendor1, vendor2, hasVerdict: Boolean(content?.trim()) };
+    return {
+      slug,
+      vendor1,
+      vendor2,
+      hasVerdict: Boolean(row?.content?.trim()),
+      updatedAt: row?.content?.trim() ? (row.updated_at ?? null) : null,
+    };
   });
 }
 
@@ -197,6 +218,7 @@ export interface ComparisonDetail {
   vendor1: string;
   vendor2: string;
   content: string;
+  updatedAt: string | null;
 }
 
 /** Single-pair version of getComparisonsWithVerdictStatus, for the edit page. */
@@ -220,10 +242,16 @@ export async function getComparisonDetail(
   const candidates = verdictSlugCandidates(vendor1, vendor2, slug);
   const { data: verdictRows } = await supabase
     .from("verdicts")
-    .select("slug, content")
+    .select("slug, content, updated_at")
     .in("slug", candidates);
 
-  const content = pickVerdictContent(verdictRows ?? [], candidates) ?? "";
+  const row = pickVerdictRow(verdictRows ?? [], candidates);
 
-  return { slug, vendor1, vendor2, content };
+  return {
+    slug,
+    vendor1,
+    vendor2,
+    content: row?.content ?? "",
+    updatedAt: row?.updated_at ?? null,
+  };
 }

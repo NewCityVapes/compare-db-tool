@@ -25,7 +25,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const rows: { slug: string; vendor1: string; vendor2: string; content: string }[] = [];
+  const rows: {
+    slug: string;
+    vendor1: string;
+    vendor2: string;
+    content: string;
+    updated_at: string;
+  }[] = [];
+  const now = new Date().toISOString();
 
   for (const [index, item] of (items as BulkItem[]).entries()) {
     const { vendor1, vendor2, content } = item ?? {};
@@ -37,7 +44,13 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    rows.push({ slug: canonicalizeSlug(vendor1, vendor2), vendor1, vendor2, content });
+    rows.push({
+      slug: canonicalizeSlug(vendor1, vendor2),
+      vendor1,
+      vendor2,
+      content,
+      updated_at: now,
+    });
   }
 
   const { error } = await supabase

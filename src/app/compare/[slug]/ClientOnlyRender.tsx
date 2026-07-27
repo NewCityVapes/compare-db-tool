@@ -385,8 +385,9 @@ function VendorCombobox({
   }, [vendors, query, value]);
 
   useEffect(() => {
-    setHighlightIndex(0);
-  }, [filtered]);
+    const currentIndex = filtered.indexOf(value);
+    setHighlightIndex(currentIndex >= 0 ? currentIndex : 0);
+  }, [filtered, value]);
 
   useEffect(() => {
     optionRefs.current[highlightIndex]?.scrollIntoView({ block: "nearest" });
@@ -440,7 +441,7 @@ function VendorCombobox({
       <div style={{ position: "relative" }}>
         <input
           type="text"
-          className="dropdown"
+          className="dropdown vendor-combobox-input"
           value={query}
           aria-label={label}
           role="combobox"
@@ -502,37 +503,43 @@ function VendorCombobox({
           }}
         >
           {filtered.length === 0 && (
-            <li style={{ padding: "8px 10px", color: "#999", fontSize: "14px" }}>
+            <li style={{ padding: "10px 14px", color: "#999", fontSize: "15px" }}>
               No vendors match &ldquo;{query}&rdquo;.
             </li>
           )}
-          {filtered.map((v, i) => (
-            <li key={v} role="option" aria-selected={v === value}>
-              <button
-                ref={(el) => {
-                  optionRefs.current[i] = el;
-                }}
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => commit(v)}
-                onMouseEnter={() => setHighlightIndex(i)}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "8px 10px",
-                  border: "none",
-                  background: i === highlightIndex ? "#f7f4ef" : "none",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  color: v === value ? "#CB9D64" : "#333",
-                  fontWeight: v === value ? 600 : 400,
-                  borderRadius: "6px",
-                }}
-              >
-                {v}
-              </button>
-            </li>
-          ))}
+          {filtered.map((v, i) => {
+            const isHighlighted = i === highlightIndex;
+            return (
+              <li key={v} role="option" aria-selected={v === value}>
+                <button
+                  ref={(el) => {
+                    optionRefs.current[i] = el;
+                  }}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => commit(v)}
+                  onMouseEnter={() => setHighlightIndex(i)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "10px 14px",
+                    border: "none",
+                    background: isHighlighted ? "#CB9D64" : "none",
+                    cursor: "pointer",
+                    fontSize: "15px",
+                    color: isHighlighted ? "#fff" : "#333",
+                    fontWeight: isHighlighted || v === value ? 600 : 400,
+                    borderRadius: "6px",
+                  }}
+                >
+                  {v}
+                  {v === value && !isHighlighted && (
+                    <span style={{ color: "#CB9D64" }}> ✓</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

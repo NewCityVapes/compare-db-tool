@@ -3,7 +3,7 @@
 // Before that, only the vendor dropdowns are shown (the SSR table in page.tsx handles display).
 
 "use client";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toSlug } from "../../../../lib/utils";
@@ -180,10 +180,9 @@ export default function ClientOnlyRender({
             { vendor: selectedVendor2, index: 1 },
           ].map(({ vendor, index }) => (
             <div key={index} className="product-column">
-              <VendorSearchInput
+              <VendorCombobox
                 vendors={vendors}
                 value={vendor}
-                listId={`vendor-options-${index}`}
                 label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
                 onSelect={(v) =>
                   updateVendorSelection(
@@ -213,10 +212,9 @@ export default function ClientOnlyRender({
           { vendor: selectedVendor2, products: products2 },
         ].map((item, index) => (
           <div key={index} className="product-column">
-            <VendorSearchInput
+            <VendorCombobox
               vendors={vendors}
               value={item.vendor}
-              listId={`vendor-options-${index}`}
               label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
               onSelect={(v) =>
                 updateVendorSelection(
@@ -354,71 +352,190 @@ export default function ClientOnlyRender({
   );
 }
 
-// ─── VendorSearchInput ───
-// A searchable/filterable replacement for the plain <select> — the vendor
-// list runs into the dozens, and a native datalist lets the browser filter
-// as you type instead of forcing a long scroll. Only commits (navigates) on
-// an exact vendor match, on blur or Enter; otherwise it reverts to the last
-// valid selection so a half-typed value never triggers a bad navigation.
-function VendorSearchInput({
+// ─── VendorCombobox ───
+// A proper searchable dropdown replacement for the plain <select> — clicking
+// it opens the full vendor list (like a select), and typing filters that
+// list live (like a search box). Arrow keys move the highlight, Enter/click
+// commits, Escape/click-outside reverts to the current selection.
+function VendorCombobox({
   vendors,
   value,
-  listId,
   label,
   onSelect,
 }: {
   vendors: string[];
   value: string;
-  listId: string;
   label: string;
   onSelect: (vendor: string) => void;
 }) {
-  const [text, setText] = useState(value);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState(value);
+  const [highlightIndex, setHighlightIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
-    setText(value);
+    setQuery(value);
   }, [value]);
 
-  function findMatch(candidate: string) {
-    return vendors.find(
-      (v) => v.toLowerCase() === candidate.trim().toLowerCase(),
-    );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q || q.toLowerCase() === value.toLowerCase()) return vendors;
+    return vendors.filter((v) => v.toLowerCase().includes(q));
+  }, [vendors, query, value]);
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [filtered]);
+
+  useEffect(() => {
+    optionRefs.current[highlightIndex]?.scrollIntoView({ block: "nearest" });
+  }, [highlightIndex]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+        setQuery(value);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [value]);
+
+  function commit(vendor: string) {
+    setOpen(false);
+    setQuery(vendor);
+    if (vendor !== value) onSelect(vendor);
   }
 
-  function commit(candidate: string) {
-    const match = findMatch(candidate);
-    if (match && match !== value) {
-      onSelect(match);
-    } else {
-      setText(value);
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open) {
+      if (e.key === "ArrowDown" || e.key === "Enter") {
+        e.preventDefault();
+        setOpen(true);
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filtered[highlightIndex]) commit(filtered[highlightIndex]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setQuery(value);
     }
   }
 
   return (
-    <>
-      <input
-        type="text"
-        list={listId}
-        className="dropdown"
-        value={text}
-        aria-label={label}
-        autoComplete="off"
-        onChange={(e) => {
-          setText(e.target.value);
-          const match = findMatch(e.target.value);
-          if (match) onSelect(match);
-        }}
-        onBlur={(e) => commit(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit(text);
-        }}
-      />
-      <datalist id={listId}>
-        {vendors.map((v) => (
-          <option key={v} value={v} />
-        ))}
-      </datalist>
-    </>
+    <div ref={containerRef} style={{ position: "relative", textAlign: "left" }}>
+      <div style={{ position: "relative" }}>
+        <input
+          type="text"
+          className="dropdown"
+          value={query}
+          aria-label={label}
+          role="combobox"
+          aria-expanded={open}
+          aria-autocomplete="list"
+          autoComplete="off"
+          onFocus={(e) => {
+            setOpen(true);
+            e.target.select();
+          }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
+          style={{ paddingRight: "32px", width: "100%" }}
+        />
+        <button
+          type="button"
+          aria-label="Toggle vendor list"
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setOpen((o) => !o)}
+          style={{
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+            fontSize: "11px",
+            color: "#888",
+            padding: 0,
+          }}
+        >
+          {open ? "▲" : "▼"}
+        </button>
+      </div>
+
+      {open && (
+        <ul
+          role="listbox"
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            maxHeight: "280px",
+            overflowY: "auto",
+            background: "#fff",
+            border: "1px solid #e5e5e5",
+            borderRadius: "8px",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+            listStyle: "none",
+            margin: 0,
+            padding: "6px",
+            zIndex: 30,
+          }}
+        >
+          {filtered.length === 0 && (
+            <li style={{ padding: "8px 10px", color: "#999", fontSize: "14px" }}>
+              No vendors match &ldquo;{query}&rdquo;.
+            </li>
+          )}
+          {filtered.map((v, i) => (
+            <li key={v} role="option" aria-selected={v === value}>
+              <button
+                ref={(el) => {
+                  optionRefs.current[i] = el;
+                }}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => commit(v)}
+                onMouseEnter={() => setHighlightIndex(i)}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "8px 10px",
+                  border: "none",
+                  background: i === highlightIndex ? "#f7f4ef" : "none",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: v === value ? "#CB9D64" : "#333",
+                  fontWeight: v === value ? 600 : 400,
+                  borderRadius: "6px",
+                }}
+              >
+                {v}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

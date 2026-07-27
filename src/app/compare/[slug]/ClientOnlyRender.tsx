@@ -7,6 +7,8 @@ import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toSlug } from "../../../../lib/utils";
+import type { DistributionStats } from "../../../../lib/priceStats";
+import DistributionBar from "../../../components/DistributionBar";
 
 type Product = {
   id: string;
@@ -31,11 +33,16 @@ export default function ClientOnlyRender({
   vendor2,
   initialProducts1 = [],
   initialProducts2 = [],
+  priceDistributions,
 }: {
   vendor1: string;
   vendor2: string;
   initialProducts1?: Product[];
   initialProducts2?: Product[];
+  priceDistributions?: {
+    pricePerPuff: DistributionStats | null;
+    pricePerML: DistributionStats | null;
+  };
 }) {
   const router = useRouter();
 
@@ -278,6 +285,13 @@ export default function ClientOnlyRender({
           const val1 = products1[0]?.[key as keyof Product] ?? null;
           const val2 = products2[0]?.[key as keyof Product] ?? null;
 
+          const distribution =
+            key === "pricePerPuff"
+              ? priceDistributions?.pricePerPuff
+              : key === "pricePerML"
+                ? priceDistributions?.pricePerML
+                : null;
+
           return (
             <div key={key} className="attribute-row" role="row">
               <div className="attribute-header" role="columnheader">
@@ -295,6 +309,28 @@ export default function ClientOnlyRender({
                   onWin={handleWin}
                 />
               </div>
+              {distribution && (
+                <div className="flex flex-row gap-2 w-full justify-between">
+                  <div className="w-1/2">
+                    {val1 != null && (val1 as number) > 0 && (
+                      <DistributionBar
+                        stats={distribution}
+                        value={val1 as number}
+                        formatValue={(v) => formatValueDisplay(v, key)}
+                      />
+                    )}
+                  </div>
+                  <div className="w-1/2">
+                    {val2 != null && (val2 as number) > 0 && (
+                      <DistributionBar
+                        stats={distribution}
+                        value={val2 as number}
+                        formatValue={(v) => formatValueDisplay(v, key)}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

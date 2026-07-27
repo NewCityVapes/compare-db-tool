@@ -22,11 +22,13 @@ import {
   truncate,
 } from "../../../../lib/seo-utils";
 import type { Product } from "../../../../lib/seo-utils";
+import { getPriceDistributions } from "../../../../lib/priceStats";
 import {
   ProductJsonLd,
   FAQJsonLd,
   BreadcrumbJsonLd,
 } from "../../../components/SEO/JsonLd";
+import DistributionBar from "../../../components/DistributionBar";
 import ClientOnlyRender from "./ClientOnlyRender";
 import RelatedComparisons from "./RelatedComparisons";
 
@@ -212,6 +214,11 @@ export default async function Page({
   const vendor1Name = product1.vendor;
   const vendor2Name = product2.vendor;
 
+  // Catalog-wide price distributions — where this pair's price-per-puff and
+  // price-per-ml sit against every other disposable we sell, not just each
+  // other. Computed once from the same allProducts fetch above.
+  const priceDistributions = getPriceDistributions(allProducts);
+
   // Comparison result & FAQs
   const result = compareProducts(product1, product2, vendor1Name, vendor2Name);
   const faqs = generateFAQs(
@@ -308,6 +315,7 @@ export default async function Page({
         vendor2={vendor2Slug}
         initialProducts1={products1}
         initialProducts2={products2}
+        priceDistributions={priceDistributions}
       />
 
       {/* SERVER-RENDERED visible comparison table — Google can read this */}
@@ -422,6 +430,13 @@ export default async function Page({
               ((higherIsBetter && val2 > val1) ||
                 (lowerIsBetter && val2 < val1));
 
+            const distribution =
+              key === "pricePerPuff"
+                ? priceDistributions.pricePerPuff
+                : key === "pricePerML"
+                  ? priceDistributions.pricePerML
+                  : null;
+
             return (
               <div key={key} className="attribute-row" role="row">
                 <div className="attribute-header" role="columnheader">
@@ -431,22 +446,38 @@ export default async function Page({
                   className="attribute-values flex flex-row gap-2 w-full justify-between"
                   role="row"
                 >
-                  <span
-                    className={`text-center w-1/2 block py-1 px-4 rounded-full ${
-                      left1wins ? "bg-green-200 font-semibold" : "opacity-70"
-                    }`}
-                    role="cell"
-                  >
-                    {formatValue(val1, key)} {left1wins && <span>🏆</span>}
-                  </span>
-                  <span
-                    className={`text-center w-1/2 block py-1 px-4 rounded-full ${
-                      right2wins ? "bg-green-200 font-semibold" : "opacity-70"
-                    }`}
-                    role="cell"
-                  >
-                    {formatValue(val2, key)} {right2wins && <span>🏆</span>}
-                  </span>
+                  <div className="w-1/2" role="cell">
+                    <span
+                      className={`text-center block py-1 px-4 rounded-full ${
+                        left1wins ? "bg-green-200 font-semibold" : "opacity-70"
+                      }`}
+                    >
+                      {formatValue(val1, key)} {left1wins && <span>🏆</span>}
+                    </span>
+                    {distribution && val1 > 0 && (
+                      <DistributionBar
+                        stats={distribution}
+                        value={val1}
+                        formatValue={(v) => formatValue(v, key)}
+                      />
+                    )}
+                  </div>
+                  <div className="w-1/2" role="cell">
+                    <span
+                      className={`text-center block py-1 px-4 rounded-full ${
+                        right2wins ? "bg-green-200 font-semibold" : "opacity-70"
+                      }`}
+                    >
+                      {formatValue(val2, key)} {right2wins && <span>🏆</span>}
+                    </span>
+                    {distribution && val2 > 0 && (
+                      <DistributionBar
+                        stats={distribution}
+                        value={val2}
+                        formatValue={(v) => formatValue(v, key)}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );

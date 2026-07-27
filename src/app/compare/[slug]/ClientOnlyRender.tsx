@@ -180,23 +180,18 @@ export default function ClientOnlyRender({
             { vendor: selectedVendor2, index: 1 },
           ].map(({ vendor, index }) => (
             <div key={index} className="product-column">
-              <select
-                className="dropdown"
+              <VendorSearchInput
+                vendors={vendors}
                 value={vendor}
-                aria-label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
-                onChange={(e) =>
+                listId={`vendor-options-${index}`}
+                label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
+                onSelect={(v) =>
                   updateVendorSelection(
-                    index === 0 ? e.target.value : selectedVendor1,
-                    index === 1 ? e.target.value : selectedVendor2,
+                    index === 0 ? v : selectedVendor1,
+                    index === 1 ? v : selectedVendor2,
                   )
                 }
-              >
-                {vendors.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           ))}
         </div>
@@ -218,23 +213,18 @@ export default function ClientOnlyRender({
           { vendor: selectedVendor2, products: products2 },
         ].map((item, index) => (
           <div key={index} className="product-column">
-            <select
-              className="dropdown"
+            <VendorSearchInput
+              vendors={vendors}
               value={item.vendor}
-              aria-label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
-              onChange={(e) =>
+              listId={`vendor-options-${index}`}
+              label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
+              onSelect={(v) =>
                 updateVendorSelection(
-                  index === 0 ? e.target.value : selectedVendor1,
-                  index === 1 ? e.target.value : selectedVendor2,
+                  index === 0 ? v : selectedVendor1,
+                  index === 1 ? v : selectedVendor2,
                 )
               }
-            >
-              {vendors.map((vendor) => (
-                <option key={vendor} value={vendor}>
-                  {vendor}
-                </option>
-              ))}
-            </select>
+            />
             <div className="product-image-container">
               {item.products.length > 0 ? (
                 <Image
@@ -361,6 +351,74 @@ export default function ClientOnlyRender({
         ))}
       </div>
     </div>
+  );
+}
+
+// ─── VendorSearchInput ───
+// A searchable/filterable replacement for the plain <select> — the vendor
+// list runs into the dozens, and a native datalist lets the browser filter
+// as you type instead of forcing a long scroll. Only commits (navigates) on
+// an exact vendor match, on blur or Enter; otherwise it reverts to the last
+// valid selection so a half-typed value never triggers a bad navigation.
+function VendorSearchInput({
+  vendors,
+  value,
+  listId,
+  label,
+  onSelect,
+}: {
+  vendors: string[];
+  value: string;
+  listId: string;
+  label: string;
+  onSelect: (vendor: string) => void;
+}) {
+  const [text, setText] = useState(value);
+
+  useEffect(() => {
+    setText(value);
+  }, [value]);
+
+  function findMatch(candidate: string) {
+    return vendors.find(
+      (v) => v.toLowerCase() === candidate.trim().toLowerCase(),
+    );
+  }
+
+  function commit(candidate: string) {
+    const match = findMatch(candidate);
+    if (match && match !== value) {
+      onSelect(match);
+    } else {
+      setText(value);
+    }
+  }
+
+  return (
+    <>
+      <input
+        type="text"
+        list={listId}
+        className="dropdown"
+        value={text}
+        aria-label={label}
+        autoComplete="off"
+        onChange={(e) => {
+          setText(e.target.value);
+          const match = findMatch(e.target.value);
+          if (match) onSelect(match);
+        }}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit(text);
+        }}
+      />
+      <datalist id={listId}>
+        {vendors.map((v) => (
+          <option key={v} value={v} />
+        ))}
+      </datalist>
+    </>
   );
 }
 

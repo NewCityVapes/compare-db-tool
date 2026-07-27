@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { getAllComparisonSlugs } from "../../lib/comparisons";
+import { getComparisonsWithVerdictStatus } from "../../lib/comparisons";
 import { canonicalizeSlug } from "../../lib/slug";
 import {
   OrganizationJsonLd,
   ItemListJsonLd,
 } from "../components/SEO/JsonLd";
+import HomeSearch from "./HomeSearch";
 
 // Real homepage — this used to be a permanent redirect straight to one
 // hardcoded comparison page, which meant the domain root had no indexable
@@ -27,10 +28,6 @@ export const metadata: Metadata = {
   },
 };
 
-function formatVendorFromSlug(slug: string): string {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 // The slug the old root-redirect middleware sent everyone to. Keep it
 // featured here so its existing inbound links/impressions carry over to a
 // real internal link instead of disappearing.
@@ -40,20 +37,20 @@ const FEATURED_SLUG = canonicalizeSlug(
 );
 
 export default async function HomePage() {
-  const allSlugs = await getAllComparisonSlugs();
+  const comparisons = await getComparisonsWithVerdictStatus();
 
   const featured = [
-    FEATURED_SLUG,
-    ...allSlugs.filter((slug) => slug !== FEATURED_SLUG),
+    ...comparisons.filter((c) => c.slug === FEATURED_SLUG),
+    ...comparisons.filter((c) => c.slug !== FEATURED_SLUG),
   ].slice(0, 8);
 
   return (
     <div className="comparison-container" style={{ padding: "20px 5%" }}>
       <OrganizationJsonLd />
       <ItemListJsonLd
-        items={featured.map((slug) => ({
-          url: `https://compare.newcityvapes.com/compare/${slug}`,
-          name: formatVendorFromSlug(slug),
+        items={featured.map((c) => ({
+          url: `https://compare.newcityvapes.com/compare/${c.slug}`,
+          name: `${c.vendor1} vs ${c.vendor2}`,
         }))}
       />
 
@@ -64,6 +61,15 @@ export default async function HomePage() {
           selection side-by-side across every disposable vape brand we carry
           in Canada — so you can pick the right one before you buy.
         </p>
+        <div className="mt-6">
+          <HomeSearch
+            comparisons={comparisons.map((c) => ({
+              slug: c.slug,
+              vendor1: c.vendor1,
+              vendor2: c.vendor2,
+            }))}
+          />
+        </div>
       </section>
 
       {featured.length > 0 && (
@@ -75,14 +81,14 @@ export default async function HomePage() {
             Popular Comparisons
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {featured.map((slug) => (
+            {featured.map((c) => (
               <a
-                key={slug}
-                href={`/compare/${slug}`}
+                key={c.slug}
+                href={`/compare/${c.slug}`}
                 className="block text-center border rounded-lg py-4 px-3 text-sm font-medium hover:border-[#CB9D64] hover:text-[#CB9D64] transition-colors"
                 style={{ borderColor: "#e5e5e5", color: "#333" }}
               >
-                {formatVendorFromSlug(slug)}
+                {c.vendor1} vs {c.vendor2}
               </a>
             ))}
           </div>

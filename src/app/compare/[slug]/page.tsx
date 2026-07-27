@@ -406,8 +406,25 @@ export default async function Page({
           aria-label="Vape comparison table"
         >
           {comparisonAttributes.map(({ label, key }) => {
-            const val1 = (product1[key as keyof typeof product1] as number) ?? 0;
-            const val2 = (product2[key as keyof typeof product2] as number) ?? 0;
+            // pricePerPuff/pricePerML are derived (price ÷ puffCount or ml)
+            // and null until a product has been synced since that
+            // calculation shipped — ?? 0 previously made "not calculated
+            // yet" indistinguishable from "genuinely $0.00", so an unsynced
+            // product could render "$0.0000 🏆" and falsely win the row.
+            const rawVal1 = product1[key as keyof typeof product1] as
+              | number
+              | null
+              | undefined;
+            const rawVal2 = product2[key as keyof typeof product2] as
+              | number
+              | null
+              | undefined;
+            const isDerivedPriceKey =
+              key === "pricePerPuff" || key === "pricePerML";
+            const val1Valid = !isDerivedPriceKey || (rawVal1 != null && rawVal1 > 0);
+            const val2Valid = !isDerivedPriceKey || (rawVal2 != null && rawVal2 > 0);
+            const val1 = rawVal1 ?? 0;
+            const val2 = rawVal2 ?? 0;
 
             const higherIsBetter = [
               "puffCount",
@@ -422,10 +439,14 @@ export default async function Page({
             ].includes(key);
 
             const left1wins =
+              val1Valid &&
+              val2Valid &&
               val1 !== val2 &&
               ((higherIsBetter && val1 > val2) ||
                 (lowerIsBetter && val1 < val2));
             const right2wins =
+              val1Valid &&
+              val2Valid &&
               val1 !== val2 &&
               ((higherIsBetter && val2 > val1) ||
                 (lowerIsBetter && val2 < val1));
@@ -452,9 +473,10 @@ export default async function Page({
                         left1wins ? "bg-green-200 font-semibold" : "opacity-70"
                       }`}
                     >
-                      {formatValue(val1, key)} {left1wins && <span>🏆</span>}
+                      {val1Valid ? formatValue(val1, key) : "N/A"}{" "}
+                      {left1wins && <span>🏆</span>}
                     </span>
-                    {distribution && val1 > 0 && (
+                    {distribution && val1Valid && (
                       <DistributionBar
                         stats={distribution}
                         value={val1}
@@ -468,9 +490,10 @@ export default async function Page({
                         right2wins ? "bg-green-200 font-semibold" : "opacity-70"
                       }`}
                     >
-                      {formatValue(val2, key)} {right2wins && <span>🏆</span>}
+                      {val2Valid ? formatValue(val2, key) : "N/A"}{" "}
+                      {right2wins && <span>🏆</span>}
                     </span>
-                    {distribution && val2 > 0 && (
+                    {distribution && val2Valid && (
                       <DistributionBar
                         stats={distribution}
                         value={val2}

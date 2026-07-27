@@ -610,11 +610,18 @@ function WinnerCell({
     keyName,
   );
 
+  // pricePerPuff/pricePerML are derived and null until a product has been
+  // synced since that calculation shipped — treating that as a genuine
+  // $0.00 let an unsynced product falsely "win" the row against a real price.
+  const isDerivedPriceKey = keyName === "pricePerPuff" || keyName === "pricePerML";
+  const val1Valid = !isDerivedPriceKey || (val1 != null && val1 > 0);
+  const val2Valid = !isDerivedPriceKey || (val2 != null && val2 > 0);
+
   useEffect(() => {
     const timeout = setTimeout(
       () => {
         let newWinner: "left" | "right" | null = null;
-        if (safe1 !== safe2) {
+        if (val1Valid && val2Valid && safe1 !== safe2) {
           if (
             (higherIsBetter && safe1 > safe2) ||
             (lowerIsBetter && safe1 < safe2)
@@ -630,7 +637,17 @@ function WinnerCell({
       500 + index * 250,
     );
     return () => clearTimeout(timeout);
-  }, [safe1, safe2, keyName, index, higherIsBetter, lowerIsBetter, onWin]);
+  }, [
+    safe1,
+    safe2,
+    keyName,
+    index,
+    higherIsBetter,
+    lowerIsBetter,
+    val1Valid,
+    val2Valid,
+    onWin,
+  ]);
 
   const baseStyle =
     "w-full block text-center py-1 px-4 rounded-full transition-all duration-500 ease-out scale-95 opacity-80";
@@ -652,14 +669,16 @@ function WinnerCell({
         <span
           className={`${baseStyle} ${winner === "left" ? winnerStyle : "opacity-70"}`}
         >
-          {formatValue(safe1, keyName)} {winner === "left" && <Trophy />}
+          {val1Valid ? formatValue(safe1, keyName) : "N/A"}{" "}
+          {winner === "left" && <Trophy />}
         </span>
       </span>
       <span className="text-center w-1/2 relative" role="cell">
         <span
           className={`${baseStyle} ${winner === "right" ? winnerStyle : "opacity-70"}`}
         >
-          {formatValue(safe2, keyName)} {winner === "right" && <Trophy />}
+          {val2Valid ? formatValue(safe2, keyName) : "N/A"}{" "}
+          {winner === "right" && <Trophy />}
         </span>
       </span>
     </>

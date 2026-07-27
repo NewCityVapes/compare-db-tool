@@ -478,6 +478,7 @@ export default async function Page({
                     </span>
                     {distribution && val1Valid && (
                       <DistributionBar
+                        id={`${key}-1`}
                         stats={distribution}
                         value={val1}
                         formatValue={(v) => formatValue(v, key)}
@@ -495,6 +496,7 @@ export default async function Page({
                     </span>
                     {distribution && val2Valid && (
                       <DistributionBar
+                        id={`${key}-2`}
                         stats={distribution}
                         value={val2}
                         formatValue={(v) => formatValue(v, key)}

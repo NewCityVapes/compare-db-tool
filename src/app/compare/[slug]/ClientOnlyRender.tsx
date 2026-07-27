@@ -314,6 +314,7 @@ export default function ClientOnlyRender({
                   <div className="w-1/2">
                     {val1 != null && (val1 as number) > 0 && (
                       <DistributionBar
+                        id={`${key}-1`}
                         stats={distribution}
                         value={val1 as number}
                         formatValue={(v) => formatValueDisplay(v, key)}
@@ -323,6 +324,7 @@ export default function ClientOnlyRender({
                   <div className="w-1/2">
                     {val2 != null && (val2 as number) > 0 && (
                       <DistributionBar
+                        id={`${key}-2`}
                         stats={distribution}
                         value={val2 as number}
                         formatValue={(v) => formatValueDisplay(v, key)}

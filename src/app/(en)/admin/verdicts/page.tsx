@@ -1,5 +1,5 @@
-import { requireAdmin } from "../../../../lib/auth";
-import { getComparisonsWithVerdictStatus } from "../../../../lib/comparisons";
+import { requireAdmin } from "../../../../../lib/auth";
+import { getComparisonsWithVerdictStatus } from "../../../../../lib/comparisons";
 import VerdictsListClient from "./VerdictsListClient";
 
 export const dynamic = "force-dynamic";

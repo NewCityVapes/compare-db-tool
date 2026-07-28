@@ -116,6 +116,65 @@ describe("formatValue", () => {
     expect(formatValue(null, "price")).toBe("N/A");
     expect(formatValue(undefined, "puffCount")).toBe("N/A");
   });
+
+  it("formats currency in Canadian French style for locale=fr", () => {
+    // fr-CA uses a comma decimal and a non-breaking space before the symbol —
+    // build expectations via Intl directly rather than hardcoding that space.
+    const cadFr = (n: number, digits: number) =>
+      new Intl.NumberFormat("fr-CA", {
+        style: "currency",
+        currency: "CAD",
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+      }).format(n);
+    expect(formatValue(19.9, "price", "fr")).toBe(cadFr(19.9, 2));
+    expect(formatValue(0.0041, "pricePerPuff", "fr")).toBe(cadFr(0.0041, 4));
+  });
+
+  it("returns N/D for missing values in French", () => {
+    expect(formatValue(null, "price", "fr")).toBe("N/D");
+  });
+});
+
+describe("generateFAQs (French)", () => {
+  it("produces French questions and includes real numeric values", () => {
+    const p1 = makeProduct({ puffCount: 7000 });
+    const p2 = makeProduct({ puffCount: 5000 });
+    const result = compareProducts(p1, p2, "Vendor A", "Vendor B");
+    const faqs = generateFAQs(p1, p2, "Vendor A", "Vendor B", result, "fr");
+
+    expect(faqs.some((f) => f.question.includes("Laquelle dure"))).toBe(true);
+    const puffFaq = faqs.find((f) => f.question.includes("Laquelle dure"));
+    // fr-CA groups thousands with a non-breaking space, not a plain space.
+    expect(puffFaq?.answer).toContain((7000).toLocaleString("fr-CA"));
+    expect(puffFaq?.answer).toContain((5000).toLocaleString("fr-CA"));
+  });
+
+  it("uses French currency formatting in the price FAQ", () => {
+    const p1 = makeProduct({ price: 25 });
+    const p2 = makeProduct({ price: 20 });
+    const result = compareProducts(p1, p2, "Vendor A", "Vendor B");
+    const faqs = generateFAQs(p1, p2, "Vendor A", "Vendor B", result, "fr");
+
+    const priceFaq = faqs.find((f) => f.question.includes("différence de prix"));
+    const cadFr = (n: number) =>
+      new Intl.NumberFormat("fr-CA", { style: "currency", currency: "CAD" }).format(n);
+    expect(priceFaq?.answer).toContain(cadFr(25));
+    expect(priceFaq?.answer).toContain(cadFr(20));
+  });
+});
+
+describe("buildPageTitle / buildMetaDescription (French)", () => {
+  it("produces a French title", () => {
+    const title = buildPageTitle("STLTH", "Vice", "fr");
+    expect(title).toContain("Comparaison de vapoteuses jetables");
+  });
+
+  it("produces a French description and mentions the winner", () => {
+    const desc = buildMetaDescription("STLTH", "Vice", "STLTH", "fr");
+    expect(desc).toContain("STLTH");
+    expect(desc).toContain("gagnant");
+  });
 });
 
 describe("sanitizeVerdictHtml", () => {

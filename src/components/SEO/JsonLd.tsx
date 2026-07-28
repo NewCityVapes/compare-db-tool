@@ -5,15 +5,19 @@
 
 import type { Product } from "../../../lib/seo-utils";
 import { truncate } from "../../../lib/seo-utils";
+import type { Locale } from "../../../lib/i18n/locale";
 
 // ─── Product Schema ───
 export function ProductJsonLd({
   product,
   vendorName,
+  locale = "en",
 }: {
   product: Product;
   vendorName: string;
+  locale?: Locale;
 }) {
+  const description = locale === "fr" ? product.description_fr : product.description;
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -23,11 +27,14 @@ export function ProductJsonLd({
       "@type": "Brand",
       name: product.vendor || vendorName,
     },
-    // Real Shopify product description when available — falls back to a
-    // spec-based sentence for the ~97% of products that don't have one.
-    description: product.description
-      ? truncate(product.description, 300)
-      : `${product.title} disposable vape — ${product.puffCount?.toLocaleString() ?? "N/A"} puffs, ${product.ml ?? "N/A"}ML, ${product.battery ?? "N/A"}mAh battery.`,
+    // Real product description when available — falls back to a spec-based
+    // sentence when it isn't (either not yet translated, for French, or one
+    // of the ~3% of products with no Shopify description at all).
+    description: description
+      ? truncate(description, 300)
+      : locale === "fr"
+        ? `Vapoteuse jetable ${product.title} — ${product.puffCount?.toLocaleString("fr-CA") ?? "N/D"} bouffées, ${product.ml ?? "N/D"} ML, ${product.battery ?? "N/D"} mAh.`
+        : `${product.title} disposable vape — ${product.puffCount?.toLocaleString() ?? "N/A"} puffs, ${product.ml ?? "N/A"}ML, ${product.battery ?? "N/A"}mAh battery.`,
     ...(product.price
       ? {
           offers: {
@@ -109,11 +116,18 @@ export function BreadcrumbJsonLd({
   vendor1,
   vendor2,
   slug,
+  locale = "en",
 }: {
   vendor1: string;
   vendor2: string;
   slug: string;
+  locale?: Locale;
 }) {
+  const comparePrefix =
+    locale === "fr"
+      ? "https://compare.newcityvapes.com/fr"
+      : "https://compare.newcityvapes.com";
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -121,20 +135,20 @@ export function BreadcrumbJsonLd({
       {
         "@type": "ListItem",
         position: 1,
-        name: "Home",
+        name: locale === "fr" ? "Accueil" : "Home",
         item: "https://newcityvapes.com",
       },
       {
         "@type": "ListItem",
         position: 2,
-        name: "Vape Comparisons",
-        item: "https://compare.newcityvapes.com",
+        name: locale === "fr" ? "Comparaisons de vapoteuses" : "Vape Comparisons",
+        item: comparePrefix,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: `${vendor1} vs ${vendor2}`,
-        item: `https://compare.newcityvapes.com/compare/${slug}`,
+        item: `${comparePrefix}/compare/${slug}`,
       },
     ],
   };

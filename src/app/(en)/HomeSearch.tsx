@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getDictionary, localizePath, type Locale } from "../../../lib/i18n";
 
 interface SearchableComparison {
   slug: string;
@@ -11,10 +12,14 @@ interface SearchableComparison {
 
 export default function HomeSearch({
   comparisons,
+  locale = "en",
 }: {
   comparisons: SearchableComparison[];
+  locale?: Locale;
 }) {
   const router = useRouter();
+  const dict = getDictionary(locale);
+  const comparePrefix = localizePath("/compare", locale);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,8 +54,8 @@ export default function HomeSearch({
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Find a comparison, e.g. STLTH vs Vice..."
-        aria-label="Search comparisons"
+        placeholder={dict.home.searchPlaceholder}
+        aria-label={dict.home.searchPlaceholder}
         style={{
           width: "100%",
           padding: "12px 16px",
@@ -82,7 +87,7 @@ export default function HomeSearch({
             <li key={c.slug}>
               <button
                 type="button"
-                onClick={() => router.push(`/compare/${c.slug}`)}
+                onClick={() => router.push(`${comparePrefix}/${c.slug}`)}
                 style={{
                   width: "100%",
                   textAlign: "left",
@@ -124,7 +129,7 @@ export default function HomeSearch({
             zIndex: 20,
           }}
         >
-          No comparisons found for &ldquo;{query}&rdquo;.
+          {dict.home.noResults(query)}
         </div>
       )}
     </div>

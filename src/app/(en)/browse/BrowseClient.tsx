@@ -2,16 +2,21 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { ComparisonStatus } from "../../../lib/comparisons";
-import { formatUpdatedAt } from "../../../lib/utils";
+import type { ComparisonStatus } from "../../../../lib/comparisons";
+import { formatUpdatedAt } from "../../../../lib/utils";
+import { getDictionary, localizePath, type Locale } from "../../../../lib/i18n";
 
 type SortMode = "brand" | "recent";
 
 export default function BrowseClient({
   comparisons,
+  locale = "en",
 }: {
   comparisons: ComparisonStatus[];
+  locale?: Locale;
 }) {
+  const dict = getDictionary(locale);
+  const comparePrefix = localizePath("/compare", locale);
   const [query, setQuery] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("brand");
 
@@ -75,8 +80,8 @@ export default function BrowseClient({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by brand, e.g. STLTH or Vice..."
-          aria-label="Search comparisons"
+          placeholder={dict.browse.searchPlaceholder}
+          aria-label={dict.browse.searchPlaceholder}
           className="browse-search-input"
           style={{
             flex: "1 1 260px",
@@ -95,8 +100,11 @@ export default function BrowseClient({
           >
             {(
               [
-                { mode: "brand" as const, label: "By Brand" },
-                { mode: "recent" as const, label: "Recently Updated" },
+                { mode: "brand" as const, label: dict.browse.sortByBrand },
+                {
+                  mode: "recent" as const,
+                  label: dict.browse.sortRecentlyUpdated,
+                },
               ]
             ).map(({ mode, label }) => (
               <button
@@ -126,9 +134,7 @@ export default function BrowseClient({
       </div>
 
       {filtered.length === 0 && (
-        <p style={{ color: "#666" }}>
-          No comparisons match &ldquo;{query}&rdquo;.
-        </p>
+        <p style={{ color: "#666" }}>{dict.browse.noMatches(query)}</p>
       )}
 
       {isSearching && filtered.length > 0 && (
@@ -139,7 +145,7 @@ export default function BrowseClient({
             .map((item) => (
               <li key={item.slug} style={{ marginBottom: "10px" }}>
                 <Link
-                  href={`/compare/${item.slug}`}
+                  href={`${comparePrefix}/${item.slug}`}
                   className="text-[#CB9D64] hover:underline"
                   style={{ fontSize: "16px" }}
                 >
@@ -161,7 +167,7 @@ export default function BrowseClient({
                 {groupedByBrand[brand].map((item) => (
                   <li key={`${brand}-${item.slug}`} style={{ marginBottom: "8px" }}>
                     <Link
-                      href={`/compare/${item.slug}`}
+                      href={`${comparePrefix}/${item.slug}`}
                       className="text-[#CB9D64] hover:underline"
                     >
                       {item.label}
@@ -190,14 +196,14 @@ export default function BrowseClient({
               }}
             >
               <Link
-                href={`/compare/${c.slug}`}
+                href={`${comparePrefix}/${c.slug}`}
                 className="text-[#CB9D64] hover:underline"
                 style={{ fontSize: "16px" }}
               >
                 {c.vendor1} vs {c.vendor2}
               </Link>
               <span style={{ fontSize: "13px", color: "#999", whiteSpace: "nowrap" }}>
-                {c.updatedAt ? formatUpdatedAt(c.updatedAt) : "—"}
+                {c.updatedAt ? formatUpdatedAt(c.updatedAt, locale) : "—"}
               </span>
             </li>
           ))}

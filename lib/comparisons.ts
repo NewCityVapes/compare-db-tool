@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { toSlug } from "./utils";
 import { canonicalizeSlug, parseCompareSlug } from "./slug";
 import type { Product } from "./seo-utils";
+import type { Locale } from "./i18n/locale";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,6 +74,8 @@ export interface VerdictRow {
   slug: string;
   content: string;
   updated_at?: string | null;
+  content_fr?: string | null;
+  updated_at_fr?: string | null;
 }
 
 /** Picks the highest-priority matching row, or null if none match. */
@@ -153,7 +156,7 @@ async function fetchAllVerdictRows(): Promise<VerdictRow[]> {
   while (true) {
     const { data, error } = await supabase
       .from("verdicts")
-      .select("slug, content, updated_at")
+      .select("slug, content, updated_at, content_fr, updated_at_fr")
       .range(from, from + pageSize - 1);
 
     if (error || !data || data.length === 0) break;
@@ -180,10 +183,15 @@ export interface ComparisonStatus {
  * a verdict exists for it. Uses the same verdictSlugCandidates/
  * pickVerdictContent fallback the live page uses, so "has content" here
  * matches exactly what a visitor would actually see.
+ *
+ * `locale` controls which verdict column "has content" is checked against —
+ * French pages must never report content as present just because the
+ * English verdict exists (and vice versa), since the two are translated and
+ * populated independently and don't reach 100% coverage at the same time.
  */
-export async function getComparisonsWithVerdictStatus(): Promise<
-  ComparisonStatus[]
-> {
+export async function getComparisonsWithVerdictStatus(
+  locale: Locale = "en",
+): Promise<ComparisonStatus[]> {
   const [productRows, slugs, verdictRows] = await Promise.all([
     fetchAllDisposableVendorRows(),
     getAllComparisonSlugs(),
@@ -202,13 +210,15 @@ export async function getComparisonsWithVerdictStatus(): Promise<
     const vendor2 = nameBySlug.get(v2Slug) ?? v2Slug;
     const candidates = verdictSlugCandidates(vendor1, vendor2, slug);
     const row = pickVerdictRow(verdictRows, candidates);
+    const content = locale === "fr" ? row?.content_fr : row?.content;
+    const updatedAt = locale === "fr" ? row?.updated_at_fr : row?.updated_at;
 
     return {
       slug,
       vendor1,
       vendor2,
-      hasVerdict: Boolean(row?.content?.trim()),
-      updatedAt: row?.content?.trim() ? (row.updated_at ?? null) : null,
+      hasVerdict: Boolean(content?.trim()),
+      updatedAt: content?.trim() ? (updatedAt ?? null) : null,
     };
   });
 }
@@ -221,9 +231,14 @@ export interface ComparisonDetail {
   updatedAt: string | null;
 }
 
-/** Single-pair version of getComparisonsWithVerdictStatus, for the edit page. */
+/**
+ * Single-pair version of getComparisonsWithVerdictStatus, for the edit page.
+ * `locale` selects the English or French verdict column — defaults to "en"
+ * so the (English-only) admin editor's behavior is unchanged.
+ */
 export async function getComparisonDetail(
   slug: string,
+  locale: Locale = "en",
 ): Promise<ComparisonDetail | null> {
   const parsed = parseCompareSlug(slug);
   if (!parsed) return null;
@@ -242,16 +257,18 @@ export async function getComparisonDetail(
   const candidates = verdictSlugCandidates(vendor1, vendor2, slug);
   const { data: verdictRows } = await supabase
     .from("verdicts")
-    .select("slug, content, updated_at")
+    .select("slug, content, updated_at, content_fr, updated_at_fr")
     .in("slug", candidates);
 
   const row = pickVerdictRow(verdictRows ?? [], candidates);
+  const content = locale === "fr" ? row?.content_fr : row?.content;
+  const updatedAt = locale === "fr" ? row?.updated_at_fr : row?.updated_at;
 
   return {
     slug,
     vendor1,
     vendor2,
-    content: row?.content ?? "",
-    updatedAt: row?.updated_at ?? null,
+    content: content ?? "",
+    updatedAt: updatedAt ?? null,
   };
 }

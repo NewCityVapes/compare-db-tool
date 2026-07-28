@@ -1,32 +1,12 @@
+// Shared locale-aware homepage logic used by both the English route
+// (src/app/(en)/page.tsx) and the French route (src/app/fr/page.tsx) — see
+// ComparisonPage.tsx for the same pattern applied to the comparison pages.
 import type { Metadata } from "next";
-import { getComparisonsWithVerdictStatus } from "../../lib/comparisons";
-import { canonicalizeSlug } from "../../lib/slug";
-import {
-  OrganizationJsonLd,
-  ItemListJsonLd,
-} from "../components/SEO/JsonLd";
+import { getComparisonsWithVerdictStatus } from "../../../lib/comparisons";
+import { canonicalizeSlug } from "../../../lib/slug";
+import { getDictionary, localizePath, type Locale } from "../../../lib/i18n";
+import { OrganizationJsonLd, ItemListJsonLd } from "@/components/SEO/JsonLd";
 import HomeSearch from "./HomeSearch";
-
-// Real homepage — this used to be a permanent redirect straight to one
-// hardcoded comparison page, which meant the domain root had no indexable
-// content of its own and no homepage authority signal for Google.
-export const revalidate = 86400;
-
-export const metadata: Metadata = {
-  title: "Disposable Vape Comparison Tool | New City Vapes",
-  description:
-    "Compare disposable vapes side-by-side across top Canadian brands. Puff count, price, battery life, price-per-puff and more.",
-  alternates: {
-    canonical: "https://compare.newcityvapes.com",
-  },
-  openGraph: {
-    title: "Disposable Vape Comparison Tool | New City Vapes",
-    description:
-      "Compare disposable vapes side-by-side across top Canadian brands.",
-    url: "https://compare.newcityvapes.com",
-    type: "website",
-  },
-};
 
 // The slug the old root-redirect middleware sent everyone to. Keep it
 // featured here so its existing inbound links/impressions carry over to a
@@ -36,8 +16,37 @@ const FEATURED_SLUG = canonicalizeSlug(
   "VICE BOX 2",
 );
 
-export default async function HomePage() {
-  const comparisons = await getComparisonsWithVerdictStatus();
+export async function generateHomeMetadata(locale: Locale): Promise<Metadata> {
+  const dict = getDictionary(locale);
+  const enUrl = "https://compare.newcityvapes.com";
+  const frUrl = "https://compare.newcityvapes.com/fr";
+  const pageUrl = locale === "fr" ? frUrl : enUrl;
+
+  return {
+    title: `${dict.home.title} | New City Vapes`,
+    description: dict.home.metaDescription,
+    alternates: {
+      canonical: pageUrl,
+      languages: {
+        "en-CA": enUrl,
+        "fr-CA": frUrl,
+      },
+    },
+    openGraph: {
+      title: `${dict.home.title} | New City Vapes`,
+      description: dict.home.metaDescription,
+      url: pageUrl,
+      type: "website",
+      locale: locale === "fr" ? "fr_CA" : "en_CA",
+    },
+  };
+}
+
+export async function HomePageContent({ locale }: { locale: Locale }) {
+  const dict = getDictionary(locale);
+  const comparisons = await getComparisonsWithVerdictStatus(locale);
+  const comparePrefix = localizePath("/compare", locale);
+  const browsePrefix = localizePath("/browse", locale);
 
   const featured = [
     ...comparisons.filter((c) => c.slug === FEATURED_SLUG),
@@ -49,17 +58,15 @@ export default async function HomePage() {
       <OrganizationJsonLd />
       <ItemListJsonLd
         items={featured.map((c) => ({
-          url: `https://compare.newcityvapes.com/compare/${c.slug}`,
+          url: `https://compare.newcityvapes.com${comparePrefix}/${c.slug}`,
           name: `${c.vendor1} vs ${c.vendor2}`,
         }))}
       />
 
       <section className="text-center max-w-3xl mx-auto mt-8 mb-12">
-        <h1 className="page-title">Disposable Vape Comparison Tool</h1>
+        <h1 className="page-title">{dict.home.title}</h1>
         <p className="page-subtitle mt-4" style={{ color: "#666" }}>
-          Compare puff count, battery life, price-per-puff, and flavour
-          selection side-by-side across every disposable vape brand we carry
-          in Canada — so you can pick the right one before you buy.
+          {dict.home.subtitle}
         </p>
         <div className="mt-6">
           <HomeSearch
@@ -68,6 +75,7 @@ export default async function HomePage() {
               vendor1: c.vendor1,
               vendor2: c.vendor2,
             }))}
+            locale={locale}
           />
         </div>
       </section>
@@ -78,13 +86,13 @@ export default async function HomePage() {
             className="text-2xl font-bold text-center mb-8"
             style={{ color: "#2E323B" }}
           >
-            Popular Comparisons
+            {dict.home.popularComparisons}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {featured.map((c) => (
               <a
                 key={c.slug}
-                href={`/compare/${c.slug}`}
+                href={`${comparePrefix}/${c.slug}`}
                 className="block text-center border rounded-lg py-4 px-3 text-sm font-medium hover:border-[#CB9D64] hover:text-[#CB9D64] transition-colors"
                 style={{ borderColor: "#e5e5e5", color: "#333" }}
               >
@@ -97,11 +105,11 @@ export default async function HomePage() {
 
       <div className="text-center mb-16">
         <a
-          href="/browse"
+          href={browsePrefix}
           className="inline-block buy-button-gold"
           style={{ textDecoration: "none" }}
         >
-          Browse All Comparisons →
+          {dict.home.browseAll}
         </a>
       </div>
     </div>

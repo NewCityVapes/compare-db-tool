@@ -6,9 +6,11 @@
 import { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { toSlug } from "../../../../lib/utils";
-import type { DistributionStats } from "../../../../lib/priceStats";
-import DistributionBar from "../../../components/DistributionBar";
+import { toSlug } from "../../../../../lib/utils";
+import { formatValue as formatValueShared } from "../../../../../lib/seo-utils";
+import type { DistributionStats } from "../../../../../lib/priceStats";
+import { getDictionary, localizePath, type Locale } from "../../../../../lib/i18n";
+import DistributionBar from "@/components/DistributionBar";
 
 type Product = {
   id: string;
@@ -34,6 +36,7 @@ export default function ClientOnlyRender({
   initialProducts1 = [],
   initialProducts2 = [],
   priceDistributions,
+  locale = "en",
 }: {
   vendor1: string;
   vendor2: string;
@@ -43,8 +46,10 @@ export default function ClientOnlyRender({
     pricePerPuff: DistributionStats | null;
     pricePerML: DistributionStats | null;
   };
+  locale?: Locale;
 }) {
   const router = useRouter();
+  const dict = getDictionary(locale);
 
   const slug = `${toSlug(decodeURIComponent(vendor1))}-vs-${toSlug(
     decodeURIComponent(vendor2),
@@ -153,24 +158,14 @@ export default function ClientOnlyRender({
   function updateVendorSelection(newVendor1: string, newVendor2: string) {
     setHasUserChangedVendors(true);
     const newSlug = `${toSlug(newVendor1)}-vs-${toSlug(newVendor2)}`;
-    router.push(`/compare/${newSlug}`);
+    router.push(localizePath(`/compare/${newSlug}`, locale));
   }
 
   function formatValueDisplay(
     value: number | string | null | undefined,
     key: string,
   ): string {
-    if (value === null || value === undefined || value === "") return "N/A";
-    const keysToFormatAsCurrency = ["price", "pricePerPuff", "pricePerML"];
-    const floatVal = typeof value === "number" ? value : parseFloat(value);
-    if (keysToFormatAsCurrency.includes(key)) {
-      if (key === "pricePerPuff") {
-        return isNaN(floatVal) ? "N/A" : `$${floatVal.toFixed(4)}`;
-      } else {
-        return isNaN(floatVal) ? "N/A" : `$${floatVal.toFixed(2)}`;
-      }
-    }
-    return value.toString();
+    return formatValueShared(value, key, locale);
   }
 
   // ✅ BEFORE user changes vendors: only show the dropdown selectors
@@ -179,7 +174,7 @@ export default function ClientOnlyRender({
     return (
       <div className="comparison-container mt-8">
         <p className="text-center text-sm text-gray-500 mb-4">
-          Change either brand below to compare a different pair:
+          {dict.common.changeVendorPrompt}
         </p>
         <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 text-center">
           {[
@@ -190,7 +185,11 @@ export default function ClientOnlyRender({
               <VendorCombobox
                 vendors={vendors}
                 value={vendor}
-                label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
+                label={dict.combobox.selectVendor(
+                  index === 0 ? "first" : "second",
+                )}
+                noMatchText={dict.combobox.noMatch}
+                toggleLabel={dict.combobox.toggleLabel}
                 onSelect={(v) =>
                   updateVendorSelection(
                     index === 0 ? v : selectedVendor1,
@@ -211,7 +210,7 @@ export default function ClientOnlyRender({
       <h1 className="page-title">
         {formatSlug(rawVendor1)} vs {formatSlug(rawVendor2)}
       </h1>
-      <h2 className="page-subtitle">Disposable Vape Comparison — Canada</h2>
+      <h2 className="page-subtitle">{dict.common.comparisonSubtitle}</h2>
 
       <div className="w-full max-w-[2400px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 relative text-center">
         {[
@@ -222,7 +221,11 @@ export default function ClientOnlyRender({
             <VendorCombobox
               vendors={vendors}
               value={item.vendor}
-              label={`Select ${index === 0 ? "first" : "second"} vendor to compare`}
+              label={dict.combobox.selectVendor(
+                index === 0 ? "first" : "second",
+              )}
+              noMatchText={dict.combobox.noMatch}
+              toggleLabel={dict.combobox.toggleLabel}
               onSelect={(v) =>
                 updateVendorSelection(
                   index === 0 ? v : selectedVendor1,
@@ -240,7 +243,7 @@ export default function ClientOnlyRender({
                   className="product-image"
                 />
               ) : (
-                <div className="image-placeholder">Loading...</div>
+                <div className="image-placeholder">{dict.combobox.loading}</div>
               )}
             </div>
             {item.products.length > 0 && (
@@ -253,7 +256,7 @@ export default function ClientOnlyRender({
                 rel="noopener noreferrer"
                 className="buy-button-gold"
               >
-                BUY NOW — ${item.products[0].price.toFixed(2)} CAD
+                {dict.common.buyNow(item.products[0].price.toFixed(2))}
               </a>
             )}
           </div>
@@ -274,13 +277,13 @@ export default function ClientOnlyRender({
         aria-label="Vape comparison table"
       >
         {[
-          { label: "PUFF COUNT", key: "puffCount" },
-          { label: "ML", key: "ml" },
-          { label: "BATTERY", key: "battery" },
-          { label: "PRICE", key: "price" },
-          { label: "PRICE PER PUFF", key: "pricePerPuff" },
-          { label: "PRICE PER ML", key: "pricePerML" },
-          { label: "NUMBER OF FLAVOURS", key: "numberOfFlavours" },
+          { label: dict.attributes.puffCount, key: "puffCount" },
+          { label: dict.attributes.ml, key: "ml" },
+          { label: dict.attributes.battery, key: "battery" },
+          { label: dict.attributes.price, key: "price" },
+          { label: dict.attributes.pricePerPuff, key: "pricePerPuff" },
+          { label: dict.attributes.pricePerMl, key: "pricePerML" },
+          { label: dict.attributes.numberOfFlavours, key: "numberOfFlavours" },
         ].map(({ label, key }, index) => {
           const val1 = products1[0]?.[key as keyof Product] ?? null;
           const val2 = products2[0]?.[key as keyof Product] ?? null;
@@ -307,6 +310,8 @@ export default function ClientOnlyRender({
                   keyName={key}
                   index={index}
                   onWin={handleWin}
+                  locale={locale}
+                  notAvailableText={dict.common.notAvailable}
                 />
               </div>
               {distribution && (
@@ -317,6 +322,7 @@ export default function ClientOnlyRender({
                         id={`${key}-1`}
                         stats={distribution}
                         value={val1 as number}
+                        locale={locale}
                         formatValue={(v) => formatValueDisplay(v, key)}
                       />
                     )}
@@ -327,6 +333,7 @@ export default function ClientOnlyRender({
                         id={`${key}-2`}
                         stats={distribution}
                         value={val2 as number}
+                        locale={locale}
                         formatValue={(v) => formatValueDisplay(v, key)}
                       />
                     )}
@@ -341,15 +348,15 @@ export default function ClientOnlyRender({
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             className="fixed bottom-6 right-6 z-50 px-3 py-1.5 text-xs bg-[#CB9D64] text-[#2E323B] font-medium rounded-full shadow-md hover:bg-[#e0b97f] transition duration-300"
-            aria-label="Scroll to top"
+            aria-label={dict.combobox.scrollTopLabel}
           >
-            ↑ Top
+            {dict.combobox.scrollTopText}
           </button>
         )}
 
         {[
-          { label: "FEATURES", key: "features" },
-          { label: "EXPERT REVIEW", key: "expertReview" },
+          { label: dict.attributes.features, key: "features" },
+          { label: dict.attributes.expertReview, key: "expertReview" },
         ].map(({ label, key }) => (
           <div key={key} className="attribute-row">
             <div className="attribute-header">
@@ -366,7 +373,7 @@ export default function ClientOnlyRender({
                         products1[0][key as keyof Product],
                         key,
                       )
-                    : "N/A"}
+                    : dict.common.notAvailable}
                 </span>
               </div>
               <div className="w-full md:w-1/2">
@@ -379,7 +386,7 @@ export default function ClientOnlyRender({
                         products2[0][key as keyof Product],
                         key,
                       )
-                    : "N/A"}
+                    : dict.common.notAvailable}
                 </span>
               </div>
             </div>
@@ -399,11 +406,15 @@ function VendorCombobox({
   vendors,
   value,
   label,
+  toggleLabel = "Toggle vendor list",
+  noMatchText = (q: string) => `No vendors match "${q}".`,
   onSelect,
 }: {
   vendors: string[];
   value: string;
   label: string;
+  toggleLabel?: string;
+  noMatchText?: (q: string) => string;
   onSelect: (vendor: string) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -499,7 +510,7 @@ function VendorCombobox({
         />
         <button
           type="button"
-          aria-label="Toggle vendor list"
+          aria-label={toggleLabel}
           tabIndex={-1}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => setOpen((o) => !o)}
@@ -542,7 +553,7 @@ function VendorCombobox({
         >
           {filtered.length === 0 && (
             <li style={{ padding: "10px 14px", color: "#999", fontSize: "15px" }}>
-              No vendors match &ldquo;{query}&rdquo;.
+              {noMatchText(query)}
             </li>
           )}
           {filtered.map((v, i) => {
@@ -591,12 +602,16 @@ function WinnerCell({
   keyName,
   index,
   onWin,
+  locale = "en",
+  notAvailableText = "N/A",
 }: {
   val1: number | null;
   val2: number | null;
   keyName: string;
   index: number;
   onWin: (winner: "left" | "right" | null) => void;
+  locale?: Locale;
+  notAvailableText?: string;
 }) {
   const safe1 = val1 ?? 0;
   const safe2 = val2 ?? 0;
@@ -656,22 +671,13 @@ function WinnerCell({
   const winnerStyle = "bg-green-200 scale-100 opacity-100 font-semibold";
   const Trophy = () => <span className="ml-1">🏆</span>;
 
-  function formatValue(value: number, key: string): string {
-    const keysToFormatAsCurrency = ["price", "pricePerPuff", "pricePerML"];
-    if (keysToFormatAsCurrency.includes(key)) {
-      if (key === "pricePerPuff") return `$${value.toFixed(4)}`;
-      return `$${value.toFixed(2)}`;
-    }
-    return value.toString();
-  }
-
   return (
     <>
       <span className="text-center w-1/2 relative" role="cell">
         <span
           className={`${baseStyle} ${winner === "left" ? winnerStyle : "opacity-70"}`}
         >
-          {val1Valid ? formatValue(safe1, keyName) : "N/A"}{" "}
+          {val1Valid ? formatValueShared(safe1, keyName, locale) : notAvailableText}{" "}
           {winner === "left" && <Trophy />}
         </span>
       </span>
@@ -679,7 +685,7 @@ function WinnerCell({
         <span
           className={`${baseStyle} ${winner === "right" ? winnerStyle : "opacity-70"}`}
         >
-          {val2Valid ? formatValue(safe2, keyName) : "N/A"}{" "}
+          {val2Valid ? formatValueShared(safe2, keyName, locale) : notAvailableText}{" "}
           {winner === "right" && <Trophy />}
         </span>
       </span>

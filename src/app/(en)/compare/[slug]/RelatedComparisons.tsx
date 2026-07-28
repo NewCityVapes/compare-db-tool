@@ -3,8 +3,9 @@
 // comparison links. Works for ALL pages regardless of whether a verdict exists.
 
 import { createClient } from "@supabase/supabase-js";
-import { toSlug } from "../../../../lib/utils";
-import { canonicalizeSlug } from "../../../../lib/slug";
+import { toSlug } from "../../../../../lib/utils";
+import { canonicalizeSlug } from "../../../../../lib/slug";
+import { localizePath, type Locale } from "../../../../../lib/i18n";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,10 +20,12 @@ export default async function RelatedComparisons({
   vendor1Slug,
   vendor2Slug,
   currentSlug,
+  locale = "en",
 }: {
   vendor1Slug: string;
   vendor2Slug: string;
   currentSlug: string;
+  locale?: Locale;
 }) {
   // ✅ Find other vendors that share the same product type
   // Pull a sample of DISPOSABLES vendors to build related comparison links
@@ -68,6 +71,20 @@ export default async function RelatedComparisons({
 
   const vendor1Name = formatVendorFromSlug(vendor1Slug);
   const vendor2Name = formatVendorFromSlug(vendor2Slug);
+  const comparePrefix = localizePath("/compare", locale);
+  const browsePrefix = localizePath("/browse", locale);
+  const t =
+    locale === "fr"
+      ? {
+          heading: "Comparaisons connexes",
+          more: (v: string) => `Plus de comparaisons ${v}`,
+          browseAll: "Voir toutes les comparaisons →",
+        }
+      : {
+          heading: "Related Comparisons",
+          more: (v: string) => `More ${v} Comparisons`,
+          browseAll: "Browse all comparisons →",
+        };
 
   return (
     <section className="max-w-4xl mx-auto mt-16 mb-10 px-4">
@@ -75,7 +92,7 @@ export default async function RelatedComparisons({
         className="text-2xl font-bold text-center mb-8"
         style={{ color: "#2E323B" }}
       >
-        Related Comparisons
+        {t.heading}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-2">
         {v1Items.length > 0 && (
@@ -84,13 +101,13 @@ export default async function RelatedComparisons({
               className="text-lg font-semibold mb-3"
               style={{ color: "#CB9D64" }}
             >
-              More {vendor1Name} Comparisons
+              {t.more(vendor1Name)}
             </h3>
             <ul className="space-y-1.5">
               {v1Items.map((item) => (
                 <li key={item.slug}>
                   <a
-                    href={`/compare/${item.slug}`}
+                    href={`${comparePrefix}/${item.slug}`}
                     className="text-gray-700 hover:text-[#CB9D64] hover:underline text-sm"
                   >
                     {item.label}
@@ -107,13 +124,13 @@ export default async function RelatedComparisons({
               className="text-lg font-semibold mb-3"
               style={{ color: "#CB9D64" }}
             >
-              More {vendor2Name} Comparisons
+              {t.more(vendor2Name)}
             </h3>
             <ul className="space-y-1.5">
               {v2Items.map((item) => (
                 <li key={item.slug}>
                   <a
-                    href={`/compare/${item.slug}`}
+                    href={`${comparePrefix}/${item.slug}`}
                     className="text-gray-700 hover:text-[#CB9D64] hover:underline text-sm"
                   >
                     {item.label}
@@ -127,10 +144,10 @@ export default async function RelatedComparisons({
 
       <div className="text-center mt-8">
         <a
-          href="/browse"
+          href={browsePrefix}
           className="text-[#CB9D64] font-semibold hover:underline"
         >
-          Browse all comparisons →
+          {t.browseAll}
         </a>
       </div>
     </section>

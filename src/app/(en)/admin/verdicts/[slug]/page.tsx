@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "../../../../../lib/auth";
-import { getComparisonDetail } from "../../../../../lib/comparisons";
+import { requireAdmin } from "../../../../../../lib/auth";
+import { getComparisonDetail } from "../../../../../../lib/comparisons";
 import VerdictEditForm from "./VerdictEditForm";
 
 export const dynamic = "force-dynamic";

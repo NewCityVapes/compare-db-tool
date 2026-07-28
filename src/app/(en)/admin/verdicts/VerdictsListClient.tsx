@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ComparisonStatus } from "../../../../lib/comparisons";
-import { formatUpdatedAt } from "../../../../lib/utils";
+import type { ComparisonStatus } from "../../../../../lib/comparisons";
+import { formatUpdatedAt } from "../../../../../lib/utils";
 
 export default function VerdictsListClient({
   comparisons,

@@ -1,4 +1,4 @@
-import { requireAdmin } from "../../../../../lib/auth";
+import { requireAdmin } from "../../../../../../lib/auth";
 import BulkImportForm from "./BulkImportForm";
 
 export default async function BulkImportPage() {

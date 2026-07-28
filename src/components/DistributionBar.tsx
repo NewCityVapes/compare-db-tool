@@ -1,5 +1,6 @@
 import type { DistributionStats } from "../../lib/priceStats";
 import { percentCheaperThan } from "../../lib/priceStats";
+import { getDictionary, type Locale } from "../../lib/i18n";
 
 /**
  * Shows where a single product's price sits against the whole catalog's
@@ -18,12 +19,15 @@ export default function DistributionBar({
   stats,
   value,
   formatValue,
+  locale = "en",
 }: {
   id: string;
   stats: DistributionStats;
   value: number;
   formatValue: (v: number) => string;
+  locale?: Locale;
 }) {
+  const dict = getDictionary(locale);
   const { min, max, avg, bins } = stats;
   const range = max - min;
   const positionPct = range === 0 ? 50 : ((value - min) / range) * 100;
@@ -106,8 +110,8 @@ export default function DistributionBar({
         />
         <div
           role="img"
-          aria-label={`${formatValue(value)}, cheaper than approximately ${cheaperThan}% of products`}
-          title={`${formatValue(value)} — cheaper than ~${cheaperThan}% of products`}
+          aria-label={`${formatValue(value)} — ${dict.distribution.cheaperThan(cheaperThan)}`}
+          title={`${formatValue(value)} — ${dict.distribution.cheaperThan(cheaperThan)}`}
           style={{
             position: "absolute",
             top: "1px",
@@ -132,7 +136,7 @@ export default function DistributionBar({
           marginTop: "5px",
         }}
       >
-        Cheaper than ~{cheaperThan}% of products
+        {dict.distribution.cheaperThan(cheaperThan)}
       </div>
 
       <div
@@ -144,9 +148,9 @@ export default function DistributionBar({
           marginTop: "3px",
         }}
       >
-        <span>Min {formatValue(min)}</span>
-        <span>Avg {formatValue(avg)}</span>
-        <span>Max {formatValue(max)}</span>
+        <span>{dict.distribution.min} {formatValue(min)}</span>
+        <span>{dict.distribution.avg} {formatValue(avg)}</span>
+        <span>{dict.distribution.max} {formatValue(max)}</span>
       </div>
     </div>
   );

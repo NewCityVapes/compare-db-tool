@@ -3,6 +3,22 @@
 // SEO utilities — matches your exact Supabase product columns
 // ============================================================
 
+import { type Locale, localeTag } from "./i18n/locale";
+
+/** Locale-aware CAD currency formatting — "$34.25" (en-CA) vs "34,25 $" (fr-CA). */
+function formatCurrency(
+  value: number,
+  locale: Locale,
+  fractionDigits = 2,
+): string {
+  return new Intl.NumberFormat(localeTag(locale), {
+    style: "currency",
+    currency: "CAD",
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
+}
+
 // ─── Your exact product shape from Supabase ───
 export type Product = {
   id: string;
@@ -21,6 +37,7 @@ export type Product = {
   expertReview?: string;
   collectionHandle?: string;
   description?: string;
+  description_fr?: string;
 };
 
 // ─── Comparison result ───
@@ -120,7 +137,14 @@ export function formatVendorName(slug: string): string {
 }
 
 // ─── Build SEO title ───
-export function buildPageTitle(vendor1: string, vendor2: string): string {
+export function buildPageTitle(
+  vendor1: string,
+  vendor2: string,
+  locale: Locale = "en",
+): string {
+  if (locale === "fr") {
+    return `${vendor1} vs ${vendor2} | Comparaison de vapoteuses jetables Canada – New City Vapes`;
+  }
   return `${vendor1} vs ${vendor2} | Disposable Vape Comparison Canada – New City Vapes`;
 }
 
@@ -129,7 +153,19 @@ export function buildMetaDescription(
   vendor1: string,
   vendor2: string,
   winner?: string,
+  locale: Locale = "en",
 ): string {
+  if (locale === "fr") {
+    const base = `Comparez ${vendor1} vs ${vendor2}, vapoteuses jetables, côte à côte. Découvrez laquelle l'emporte sur le nombre de bouffées, l'autonomie de la batterie, le prix, la capacité en ML, le prix par bouffée et plus encore.`;
+    // compareProducts() always returns the literal "Tie" (never localized) as
+    // the sentinel for no winner — the vendor name it returns otherwise needs
+    // no translation either way.
+    if (winner && winner !== "Tie") {
+      return `${base} Notre comparaison désigne ${winner} comme grand gagnant.`;
+    }
+    return `${base} Trouvez la meilleure vapoteuse jetable au Canada.`;
+  }
+
   const base = `Compare ${vendor1} vs ${vendor2} disposable vapes side-by-side. See which wins on puff count, battery life, price, ML capacity, price-per-puff, and more.`;
   if (winner && winner !== "Tie") {
     return `${base} Our comparison picks ${winner} as the overall winner.`;
@@ -161,16 +197,18 @@ export function sanitizeVerdictHtml(html: string): string {
 export function formatValue(
   value: number | string | null | undefined,
   key: string,
+  locale: Locale = "en",
 ): string {
-  if (value === null || value === undefined || value === "") return "N/A";
+  const notAvailable = locale === "fr" ? "N/D" : "N/A";
+  if (value === null || value === undefined || value === "") return notAvailable;
   const keysToFormatAsCurrency = ["price", "pricePerPuff", "pricePerML"];
   const floatVal =
     typeof value === "number" ? value : parseFloat(value as string);
   if (keysToFormatAsCurrency.includes(key)) {
-    if (key === "pricePerPuff") {
-      return isNaN(floatVal) ? "N/A" : `$${floatVal.toFixed(4)}`;
-    }
-    return isNaN(floatVal) ? "N/A" : `$${floatVal.toFixed(2)}`;
+    if (isNaN(floatVal)) return notAvailable;
+    return key === "pricePerPuff"
+      ? formatCurrency(floatVal, locale, 4)
+      : formatCurrency(floatVal, locale, 2);
   }
   return value.toString();
 }
@@ -182,8 +220,82 @@ export function generateFAQs(
   vendor1: string,
   vendor2: string,
   result: ComparisonResult,
+  locale: Locale = "en",
 ): { question: string; answer: string }[] {
   const faqs: { question: string; answer: string }[] = [];
+  const numFmt = (n: number) => n.toLocaleString(localeTag(locale));
+
+  if (locale === "fr") {
+    // Overall winner
+    faqs.push({
+      question: `Quelle vapoteuse jetable est la meilleure, ${vendor1} ou ${vendor2} ?`,
+      answer:
+        result.winner !== "tie"
+          ? `Selon notre comparaison portant sur ${result.breakdown.length} critères, ${result.winnerName} l'emporte avec un score de ${Math.max(result.leftScore, result.rightScore)} à ${Math.min(result.leftScore, result.rightScore)}. La comparaison évalue le nombre de bouffées, la capacité en ML, l'autonomie de la batterie, le prix, le prix par bouffée, le prix par ML et le nombre de saveurs.`
+          : `Notre comparaison portant sur ${result.breakdown.length} critères montre que ${vendor1} et ${vendor2} sont à égalité, chacune obtenant ${result.leftScore} points. Le meilleur choix dépend des critères qui comptent le plus pour vous.`,
+    });
+
+    // Puff count
+    if (p1?.puffCount && p2?.puffCount) {
+      const more = p1.puffCount > p2.puffCount ? vendor1 : vendor2;
+      const moreVal = Math.max(p1.puffCount, p2.puffCount);
+      const lessVal = Math.min(p1.puffCount, p2.puffCount);
+      faqs.push({
+        question: `Laquelle dure le plus longtemps, ${vendor1} ou ${vendor2} ?`,
+        answer:
+          p1.puffCount === p2.puffCount
+            ? `${vendor1} et ${vendor2} offrent toutes deux ${numFmt(p1.puffCount)} bouffées; elles durent donc à peu près aussi longtemps.`
+            : `${more} dure plus longtemps avec ${numFmt(moreVal)} bouffées, comparativement à ${numFmt(lessVal)} bouffées.`,
+      });
+    }
+
+    // Price
+    if (p1?.price && p2?.price) {
+      const cheaper = p1.price < p2.price ? vendor1 : vendor2;
+      const cheaperPrice = Math.min(p1.price, p2.price);
+      const pricierPrice = Math.max(p1.price, p2.price);
+      faqs.push({
+        question: `Quelle est la différence de prix entre ${vendor1} et ${vendor2} ?`,
+        answer:
+          p1.price === p2.price
+            ? `${vendor1} et ${vendor2} sont toutes deux au prix de ${formatCurrency(p1.price, locale)} CAD.`
+            : `${cheaper} est plus abordable à ${formatCurrency(cheaperPrice, locale)} CAD, tandis que l'autre coûte ${formatCurrency(pricierPrice, locale)} CAD — un écart de ${formatCurrency(Math.abs(p1.price - p2.price), locale)} CAD.`,
+      });
+    }
+
+    // Price per puff
+    if (p1?.pricePerPuff && p2?.pricePerPuff) {
+      const better = p1.pricePerPuff < p2.pricePerPuff ? vendor1 : vendor2;
+      const betterVal = Math.min(p1.pricePerPuff, p2.pricePerPuff);
+      const worseVal = Math.max(p1.pricePerPuff, p2.pricePerPuff);
+      faqs.push({
+        question: `Quelle vapoteuse jetable offre le meilleur prix par bouffée, ${vendor1} ou ${vendor2} ?`,
+        answer: `${better} offre un meilleur rapport qualité-prix à ${formatCurrency(betterVal, locale, 4)} CAD par bouffée, comparativement à ${formatCurrency(worseVal, locale, 4)} CAD par bouffée.`,
+      });
+    }
+
+    // Battery
+    if (p1?.battery && p2?.battery) {
+      const stronger = p1.battery > p2.battery ? vendor1 : vendor2;
+      const strongerVal = Math.max(p1.battery, p2.battery);
+      const weakerVal = Math.min(p1.battery, p2.battery);
+      faqs.push({
+        question: `Laquelle a la plus grosse batterie, ${vendor1} ou ${vendor2} ?`,
+        answer:
+          p1.battery === p2.battery
+            ? `Les deux appareils partagent la même batterie de ${p1.battery} mAh.`
+            : `${stronger} a une batterie plus puissante de ${strongerVal} mAh, comparativement à ${weakerVal} mAh.`,
+      });
+    }
+
+    // Availability
+    faqs.push({
+      question: `Puis-je acheter les vapoteuses jetables ${vendor1} et ${vendor2} au Canada ?`,
+      answer: `Oui, ${vendor1} et ${vendor2} sont toutes deux offertes en vente au Canada chez New City Vapes, avec livraison gratuite sur les commandes de 50 $ et plus.`,
+    });
+
+    return faqs;
+  }
 
   // Overall winner
   faqs.push({

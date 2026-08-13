@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { getComparisonsWithVerdictStatus } from "../../../lib/comparisons";
 import { canonicalizeSlug } from "../../../lib/slug";
 import { getDictionary, localizePath, type Locale } from "../../../lib/i18n";
+import { truncate } from "../../../lib/seo-utils";
 import { OrganizationJsonLd, ItemListJsonLd } from "@/components/SEO/JsonLd";
 import HomeSearch from "./HomeSearch";
 
@@ -22,9 +23,11 @@ export async function generateHomeMetadata(locale: Locale): Promise<Metadata> {
   const frUrl = "https://compare.newcityvapes.com/fr";
   const pageUrl = locale === "fr" ? frUrl : enUrl;
 
+  const description = truncate(dict.home.metaDescription, 155);
+
   return {
     title: `${dict.home.title} | New City Vapes`,
-    description: dict.home.metaDescription,
+    description,
     alternates: {
       canonical: pageUrl,
       languages: {
@@ -34,7 +37,7 @@ export async function generateHomeMetadata(locale: Locale): Promise<Metadata> {
     },
     openGraph: {
       title: `${dict.home.title} | New City Vapes`,
-      description: dict.home.metaDescription,
+      description,
       url: pageUrl,
       type: "website",
       locale: locale === "fr" ? "fr_CA" : "en_CA",

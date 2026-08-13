@@ -5,6 +5,7 @@
 import type { Metadata } from "next";
 import { getComparisonsWithVerdictStatus } from "../../../../lib/comparisons";
 import { getDictionary, localizePath, type Locale } from "../../../../lib/i18n";
+import { truncate } from "../../../../lib/seo-utils";
 import {
   ItemListJsonLd,
   BreadcrumbListJsonLd,
@@ -19,7 +20,7 @@ export async function generateBrowseMetadata(locale: Locale): Promise<Metadata> 
 
   return {
     title: `${dict.browse.title} | New City Vapes`,
-    description: dict.browse.metaDescription,
+    description: truncate(dict.browse.metaDescription, 155),
     alternates: {
       canonical: pageUrl,
       languages: {

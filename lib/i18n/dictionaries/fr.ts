@@ -56,7 +56,7 @@ const fr: Dictionary = {
     subtitle: (count: number) =>
       `Parcourez ${count} comparaisons côte à côte pour chaque marque de vapoteuse jetable que nous offrons. Cliquez sur une comparaison pour voir les caractéristiques détaillées, les prix et notre verdict d'expert.`,
     metaDescription:
-      "Parcourez toutes les comparaisons de vapoteuses jetables. Comparez le nombre de bouffées, le prix et l'autonomie de la batterie pour chaque marque offerte au Canada.",
+      "Parcourez toutes nos comparaisons de vapoteuses jetables : bouffées, prix et autonomie de la batterie pour chaque marque offerte au Canada.",
     searchPlaceholder: "Recherchez une marque, ex. STLTH ou Vice...",
     sortByBrand: "Par marque",
     sortRecentlyUpdated: "Récemment mises à jour",
@@ -67,7 +67,7 @@ const fr: Dictionary = {
     subtitle:
       "Comparez le nombre de bouffées, l'autonomie de la batterie, le prix par bouffée et le choix de saveurs, côte à côte, pour chaque marque de vapoteuse jetable que nous offrons au Canada — afin de choisir la bonne avant d'acheter.",
     metaDescription:
-      "Comparez les vapoteuses jetables côte à côte parmi les meilleures marques canadiennes. Nombre de bouffées, prix, autonomie de la batterie, prix par bouffée et plus encore.",
+      "Comparez les vapoteuses jetables côte à côte : bouffées, prix, autonomie de la batterie et plus, pour les meilleures marques disponibles au Canada.",
     searchPlaceholder: "Trouvez une comparaison, ex. STLTH vs Vice...",
     popularComparisons: "Comparaisons populaires",
     browseAll: "Voir toutes les comparaisons →",

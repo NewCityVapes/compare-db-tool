@@ -30,6 +30,32 @@ const nextConfig: NextConfig = {
 
   reactStrictMode: true,
 
+  // This app has no /blogs or /collections routes — those pages live on
+  // the main Shopify store. A handful got indexed under this subdomain
+  // anyway (old backlinks/shares, or a since-removed proxy) and 404
+  // here. Since nothing in this app ever serves these paths, sending them
+  // to the real content on newcityvapes.com can only recover otherwise-dead
+  // URLs — it can't break an existing route.
+  async redirects() {
+    return [
+      {
+        source: "/blogs/:path*",
+        destination: "https://newcityvapes.com/blogs/:path*",
+        permanent: true,
+      },
+      {
+        source: "/collections/:path*",
+        destination: "https://newcityvapes.com/collections/:path*",
+        permanent: true,
+      },
+      {
+        source: "/fr/index",
+        destination: "/fr",
+        permanent: true,
+      },
+    ];
+  },
+
   // ✅ Security + caching headers
   async headers() {
     return [

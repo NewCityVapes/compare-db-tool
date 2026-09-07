@@ -38,11 +38,24 @@ async function syncProducts() {
   console.log(`🛍️ Preparing to insert ${products.length} products into Supabase...`);
   fs.appendFileSync(logFile, `🛍️ Inserting ${products.length} products...\n`);
 
-  const { data, error } = await supabase.from("products").upsert(products);
+  // Batched + explicit onConflict for the same reason as lib/syncShopify.ts:
+  // one unbatched upsert on a catalog this size risks payload/param-limit
+  // failures, and without onConflict a mismatched primary key silently
+  // falls back to per-row inserts that fail on any existing id.
+  const BATCH_SIZE = 250;
+  let insertError = null;
+  for (let i = 0; i < products.length; i += BATCH_SIZE) {
+    const batch = products.slice(i, i + BATCH_SIZE);
+    const { error } = await supabase.from("products").upsert(batch, { onConflict: "id" });
+    if (error) {
+      insertError = error;
+      break;
+    }
+  }
 
-  if (error) {
-    console.error("❌ Supabase Insert Error:", JSON.stringify(error, null, 2));
-    fs.appendFileSync(logFile, `❌ Supabase Insert Error: ${JSON.stringify(error, null, 2)}\n`);
+  if (insertError) {
+    console.error("❌ Supabase Insert Error:", JSON.stringify(insertError, null, 2));
+    fs.appendFileSync(logFile, `❌ Supabase Insert Error: ${JSON.stringify(insertError, null, 2)}\n`);
   } else {
     console.log(`✅ Successfully Inserted ${products.length} products.`);
     fs.appendFileSync(logFile, `✅ Successfully Inserted ${products.length} products.\n`);

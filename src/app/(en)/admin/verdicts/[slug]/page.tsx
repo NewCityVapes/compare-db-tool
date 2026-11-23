@@ -41,12 +41,21 @@ export default async function VerdictEditPage({
               timeStyle: "short",
             })}`
           : "Never edited"}
+        {" · "}
+        {detail.updatedAtFr
+          ? `French saved ${new Date(detail.updatedAtFr).toLocaleString("en-CA", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}`
+          : "No French yet"}
       </p>
       <VerdictEditForm
         slug={slug}
         vendor1={detail.vendor1}
         vendor2={detail.vendor2}
         initialContent={detail.content}
+        initialContentFr={detail.contentFr}
+        initialFrStatus={detail.frStatus}
       />
     </main>
   );

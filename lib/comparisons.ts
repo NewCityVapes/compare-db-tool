@@ -78,6 +78,28 @@ export interface VerdictRow {
   updated_at_fr?: string | null;
 }
 
+export type FrenchStatus = "n/a" | "missing" | "outdated" | "current";
+
+/**
+ * Where a verdict's French version stands relative to its English one:
+ * "n/a" (no English verdict to translate), "missing" (no French yet),
+ * "outdated" (English was saved after the French was) or "current".
+ */
+export function frenchStatus(
+  row: VerdictRow | null | undefined,
+): FrenchStatus {
+  if (!row?.content?.trim()) return "n/a";
+  if (!row.content_fr?.trim()) return "missing";
+  if (
+    row.updated_at &&
+    row.updated_at_fr &&
+    new Date(row.updated_at).getTime() > new Date(row.updated_at_fr).getTime()
+  ) {
+    return "outdated";
+  }
+  return "current";
+}
+
 /** Picks the highest-priority matching row, or null if none match. */
 export function pickVerdictRow(
   rows: VerdictRow[],
@@ -174,6 +196,7 @@ export interface ComparisonStatus {
   vendor2: string;
   hasVerdict: boolean;
   updatedAt: string | null;
+  frStatus: FrenchStatus;
 }
 
 /**
@@ -219,6 +242,7 @@ export async function getComparisonsWithVerdictStatus(
       vendor2,
       hasVerdict: Boolean(content?.trim()),
       updatedAt: content?.trim() ? (updatedAt ?? null) : null,
+      frStatus: frenchStatus(row),
     };
   });
 }
@@ -229,6 +253,9 @@ export interface ComparisonDetail {
   vendor2: string;
   content: string;
   updatedAt: string | null;
+  contentFr: string;
+  updatedAtFr: string | null;
+  frStatus: FrenchStatus;
 }
 
 /**
@@ -270,5 +297,8 @@ export async function getComparisonDetail(
     vendor2,
     content: content ?? "",
     updatedAt: updatedAt ?? null,
+    contentFr: row?.content_fr ?? "",
+    updatedAtFr: row?.updated_at_fr ?? null,
+    frStatus: frenchStatus(row),
   };
 }

@@ -4,6 +4,14 @@ import { useMemo, useState } from "react";
 import type { ComparisonStatus } from "../../../../../lib/comparisons";
 import { formatUpdatedAt } from "../../../../../lib/utils";
 
+type FrFilter = "all" | "missing" | "outdated" | "current";
+
+const FR_BADGE: Record<string, { label: string; cls: string } | undefined> = {
+  missing: { label: "FR missing", cls: "bg-gray-100 text-gray-500" },
+  outdated: { label: "FR outdated", cls: "bg-amber-100 text-amber-800" },
+  current: { label: "FR ✓", cls: "bg-blue-100 text-blue-800" },
+};
+
 export default function VerdictsListClient({
   comparisons,
 }: {
@@ -11,11 +19,13 @@ export default function VerdictsListClient({
 }) {
   const [query, setQuery] = useState("");
   const [onlyEmpty, setOnlyEmpty] = useState(false);
+  const [frFilter, setFrFilter] = useState<FrFilter>("all");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return comparisons.filter((c) => {
       if (onlyEmpty && c.hasVerdict) return false;
+      if (frFilter !== "all" && c.frStatus !== frFilter) return false;
       if (!q) return true;
       return (
         c.vendor1.toLowerCase().includes(q) ||
@@ -23,7 +33,7 @@ export default function VerdictsListClient({
         c.slug.includes(q)
       );
     });
-  }, [comparisons, query, onlyEmpty]);
+  }, [comparisons, query, onlyEmpty, frFilter]);
 
   return (
     <div>
@@ -35,6 +45,17 @@ export default function VerdictsListClient({
           onChange={(e) => setQuery(e.target.value)}
           className="flex-1 p-2 border rounded"
         />
+        <select
+          value={frFilter}
+          onChange={(e) => setFrFilter(e.target.value as FrFilter)}
+          className="p-2 border rounded text-sm"
+          aria-label="Filter by French status"
+        >
+          <option value="all">French: all</option>
+          <option value="missing">French: missing</option>
+          <option value="outdated">French: outdated</option>
+          <option value="current">French: current</option>
+        </select>
         <label className="flex items-center gap-2 text-sm whitespace-nowrap">
           <input
             type="checkbox"
@@ -62,6 +83,13 @@ export default function VerdictsListClient({
               {c.updatedAt && (
                 <span className="text-xs text-gray-400">
                   {formatUpdatedAt(c.updatedAt)}
+                </span>
+              )}
+              {FR_BADGE[c.frStatus] && (
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${FR_BADGE[c.frStatus]!.cls}`}
+                >
+                  {FR_BADGE[c.frStatus]!.label}
                 </span>
               )}
               <span

@@ -22,7 +22,11 @@ export default async function VerdictsListPage() {
       </div>
       <p className="text-sm text-gray-500 mb-6">
         {comparisons.filter((c) => c.hasVerdict).length} of{" "}
-        {comparisons.length} comparison pages have a verdict.
+        {comparisons.length} comparison pages have a verdict. French:{" "}
+        {comparisons.filter((c) => c.frStatus === "current").length} current,{" "}
+        {comparisons.filter((c) => c.frStatus === "outdated").length} outdated,{" "}
+        {comparisons.filter((c) => c.frStatus === "missing").length} not yet
+        translated.
       </p>
       <VerdictsListClient comparisons={comparisons} />
     </main>

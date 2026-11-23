@@ -4,6 +4,7 @@ import {
   pickVerdictContent,
   pickVerdictRow,
   productsForVendorSlug,
+  frenchStatus,
 } from "./comparisons";
 import type { Product } from "./seo-utils";
 
@@ -114,5 +115,43 @@ describe("productsForVendorSlug", () => {
     expect(productsForVendorSlug([makeProduct("STLTH", "X")], "vice")).toEqual(
       [],
     );
+  });
+});
+
+describe("frenchStatus", () => {
+  const base = { slug: "a-vs-b", content: "<p>en</p>" };
+
+  it("is n/a when there is no English verdict to translate", () => {
+    expect(frenchStatus(null)).toBe("n/a");
+    expect(frenchStatus({ ...base, content: "  " })).toBe("n/a");
+  });
+
+  it("is missing when English exists but French doesn't", () => {
+    expect(frenchStatus(base)).toBe("missing");
+    expect(frenchStatus({ ...base, content_fr: "  " })).toBe("missing");
+  });
+
+  it("is outdated when English was saved after the French", () => {
+    expect(
+      frenchStatus({
+        ...base,
+        content_fr: "<p>fr</p>",
+        updated_at: "2026-08-02T00:00:00Z",
+        updated_at_fr: "2026-08-01T00:00:00Z",
+      }),
+    ).toBe("outdated");
+  });
+
+  it("is current when French is at least as new as the English", () => {
+    expect(
+      frenchStatus({
+        ...base,
+        content_fr: "<p>fr</p>",
+        updated_at: "2026-08-01T00:00:00Z",
+        updated_at_fr: "2026-08-02T00:00:00Z",
+      }),
+    ).toBe("current");
+    // legacy rows with French but no timestamps shouldn't be flagged
+    expect(frenchStatus({ ...base, content_fr: "<p>fr</p>" })).toBe("current");
   });
 });
